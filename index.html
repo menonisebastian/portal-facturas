@@ -78,7 +78,10 @@
         if (!file) return;
 
         // AQUÍ DEBES PONER LA URL DE TU WEBHOOK DE N8N (La de "Production URL")
-        const N8N_WEBHOOK_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/subir-factura'; 
+        //const N8N_WEBHOOK_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/subir-factura';
+
+        // AQUÍ DEBES PONER LA URL DE TU WEBHOOK DE N8N (La de "Test URL")
+        const N8N_WEBHOOK_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook-test/subir-factura'; 
 
         // Preparamos el archivo como lo espera tu nodo de n8n
         const formData = new FormData();
