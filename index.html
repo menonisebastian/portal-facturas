@@ -10,13 +10,28 @@
     <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/style.css" rel="stylesheet" />
 
     <style>
-      /* Esto "ataca" directamente lo que vimos en tu consola */
-      div#n8n-chat .chat-header {
-        background-color: #2563eb !important;
-      }
-      div#n8n-chat .chat-window-toggle {
-        background-color: #2563eb !important;
-      }
+          /* Colores del chat */
+          div#n8n-chat .chat-header {
+            background-color: #2563eb !important;
+          }
+          div#n8n-chat .chat-window-toggle {
+            background-color: #2563eb !important;
+          }
+
+            /* Localizamos el botón de enviar dentro del chat */
+          #n8n-chat button.chat-send-button {
+            opacity: 1 !important;
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            display: flex !important;
+          }
+        
+          /* Si el botón está visualmente oculto o deshabilitado por una clase */
+          #n8n-chat button[disabled] {
+            opacity: 1 !important;
+            filter: none !important;
+            cursor: pointer !important;
+          }
     </style>
 </head>
 <body>
