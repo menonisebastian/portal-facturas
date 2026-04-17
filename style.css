@@ -18,6 +18,12 @@
     --on-background: #ffffff;
     --on-surface-variant: #94a3b8;
     --primary: #bfc2ff;
+    
+    /* n8n Chat Variables for Dark Mode */
+    --chat--color-window-background: #0f172a !important;
+    --chat--color-message-list-background: #0f172a !important;
+    --chat--color-white: #1e293b !important;
+    --chat--color-secondary-background: #1e293b !important;
 }
 
 /* Animations */
@@ -67,12 +73,10 @@ div#n8n-chat .chat-window {
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1) !important;
 }
 
-.dark div#n8n-chat .chat-window {
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    background-color: #0f172a !important;
-}
-
-.dark #n8n-chat .chat-message-list {
+.dark div#n8n-chat .chat-window,
+.dark div#n8n-chat .chat-message-list,
+.dark div#n8n-chat .chat-window-container,
+.dark div#n8n-chat .chat-window-body {
     background-color: #0f172a !important;
 }
 

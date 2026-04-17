@@ -71,7 +71,15 @@ function initChat(selectedTheme = 'light') {
                 inputPlaceholder: 'Escribe tu duda...',
                 getStarted: 'Comenzar',
             }
-        }
+        },
+        customCSS: selectedTheme === 'dark' ? `
+            .chat-window { background-color: #0f172a !important; }
+            .chat-message-list { background-color: #0f172a !important; }
+            .chat-message-bubble-assistant { background-color: #1e293b !important; color: white !important; }
+            .chat-message-bubble-user { background-color: #030086 !important; }
+            .chat-input { background-color: #1e293b !important; }
+            .chat-input textarea { background-color: #0f172a !important; color: white !important; border-color: #334155 !important; }
+        ` : ''
     });
 }
 
