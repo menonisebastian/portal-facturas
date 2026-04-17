@@ -3,54 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subir Facturas</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background-color: #f3f4f6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .card {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        h2 { color: #1f2937; margin-top: 0; }
-        p { color: #4b5563; font-size: 0.9rem; margin-bottom: 1.5rem; }
-        input[type="file"] {
-            display: block;
-            width: 100%;
-            margin-bottom: 1rem;
-            padding: 0.5rem;
-            border: 1px dashed #d1d5db;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #2563eb;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            transition: background-color 0.2s;
-        }
-        button:hover { background-color: #1d4ed8; }
-        button:disabled { background-color: #93c5fd; cursor: not-allowed; }
-        #status { margin-top: 1rem; font-size: 0.9rem; font-weight: bold; }
-        .success { color: #16a34a; }
-        .error { color: #dc2626; }
-    </style>
+    <title>Portal de Facturas</title>
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <link href="https://n8n-automatizacion.178.105.8.162.sslip.io/chat/style.css" rel="stylesheet" />
 </head>
 <body>
 
@@ -66,53 +23,7 @@
     <div id="status"></div>
 </div>
 
-<script>
-    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-        e.preventDefault(); // Evita que la página se recargue
-        
-        const fileInput = document.getElementById('fileInput');
-        const submitBtn = document.getElementById('submitBtn');
-        const statusDiv = document.getElementById('status');
-        
-        const file = fileInput.files[0];
-        if (!file) return;
-
-        // AQUÍ DEBES PONER LA URL DE TU WEBHOOK DE N8N (La de "Production URL")
-        const N8N_WEBHOOK_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/subir-factura';
-
-        // Preparamos el archivo como lo espera tu nodo de n8n
-        const formData = new FormData();
-        formData.append("attachment_0", file);
-
-        // Cambiamos el estado del botón mientras carga
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Enviando...';
-        statusDiv.textContent = '';
-        statusDiv.className = '';
-
-        try {
-            const response = await fetch(N8N_WEBHOOK_URL, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                statusDiv.textContent = '¡Factura enviada con éxito!';
-                statusDiv.className = 'success';
-                fileInput.value = ''; // Limpiamos el input
-            } else {
-                throw new Error('Error en el servidor');
-            }
-        } catch (error) {
-            statusDiv.textContent = 'Error al enviar. Revisa la URL del Webhook o tu conexión.';
-            statusDiv.className = 'error';
-        } finally {
-            // Restauramos el botón
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Enviar a Procesar';
-        }
-    });
-</script>
+<script type="module" src="app.js"></script>
 
 </body>
 </html>
