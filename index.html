@@ -18,32 +18,45 @@
             background-color: #2563eb !important;
           }
 
-           /* 1. Evitamos que el input pise al botón */
+           /* 1. Convertimos el contenedor del input en una cuadrícula */
           #n8n-chat .chat-input {
-            width: calc(100% - 50px) !important; /* Le quita espacio para que quepa el botón */
-            flex: 1 !important;
-            padding-right: 10px !important;
+            display: grid !important;
+            grid-template-columns: 1fr auto !important; /* El texto ocupa todo, el botón solo lo que necesita */
+            align-items: end !important; /* Alinea el botón abajo si el texto crece */
+            gap: 8px !important;
+            padding: 8px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
           }
         
-          /* 2. Forzamos al botón a mantener su tamaño y estar al frente */
-          #n8n-chat .chat-send-button {
-            width: 40px !important;
-            min-width: 40px !important;
-            height: 40px !important;
-            z-index: 10 !important; /* Lo pone por encima del input */
+          /* 2. Ajustamos el cuadro de texto */
+          #n8n-chat .chat-input textarea {
+            width: 100% !important;
+            resize: none !important;
+            border: none !important;
+            padding: 8px !important;
+          }
+        
+          /* 3. Forzamos al botón a ser visible y clickable */
+          #n8n-chat .chat-input-send-button {
+            background-color: #2563eb !important; /* Tu azul */
+            color: white !important;
+            border-radius: 5px !important;
             cursor: pointer !important;
             pointer-events: auto !important;
             opacity: 1 !important;
+            min-width: 40px !important;
+            height: 40px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
           }
         
-          /* 3. Aseguramos que el contenedor del footer no los amontone */
-          #n8n-chat .chat-footer {
-            display: flex !important;
-            align-items: center !important;
-            gap: 5px !important; /* Espacio entre el texto y el botón */
+          /* 4. Eliminamos el bloqueo visual de n8n */
+          #n8n-chat .chat-input-send-button[disabled] {
+            opacity: 1 !important;
+            cursor: pointer !important;
+            background-color: #2563eb !important;
           }
     </style>
 </head>
