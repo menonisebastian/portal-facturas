@@ -287,3 +287,73 @@ setInterval(() => {
         chatSubtitle.textContent = 'Consulta inteligente de tus documentos';
     }
 }, 1000);
+
+/* 
+// --- 6. INTEGRACIÓN REAL CON N8N (EJEMPLOS PARA ACTIVAR) ---
+// Estas funciones están comentadas para que sigas viendo los datos de prueba.
+// Para activarlas, descomenta el código y llama a la función correspondiente.
+
+const REAL_API_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/api-portal';
+
+// 1. Cargar datos del Dashboard desde Excel (OneDrive) vía n8n
+async function loadRealDashboardData() {
+    try {
+        const response = await fetch(`${REAL_API_URL}/stats`);
+        const data = await response.json();
+        
+        // Actualizar valores en el DOM (asegúrate de que los IDs existan en index.html)
+        // document.getElementById('total-invoices').textContent = data.count;
+        // document.getElementById('total-amount').textContent = `$${data.total_amount}`;
+        console.log('Datos de Dashboard cargados:', data);
+    } catch (error) {
+        console.error('Error cargando Dashboard:', error);
+    }
+}
+
+// 2. Cargar lista de facturas desde Excel (OneDrive) vía n8n
+async function loadRealInvoicesTable() {
+    try {
+        const response = await fetch(`${REAL_API_URL}/list`);
+        const invoices = await response.json();
+        
+        const tbody = document.querySelector('#invoices-section tbody');
+        tbody.innerHTML = ''; // Limpiar tabla actual
+        
+        invoices.forEach(inv => {
+            const row = `
+                <tr class="hover:bg-primary-fixed/30 dark:hover:bg-white/5 cursor-pointer transition-colors" onclick="previewInvoice('${inv.id}')">
+                    <td class="px-6 py-4 font-bold text-primary dark:text-[#bfc2ff]">${inv.id}</td>
+                    <td class="px-6 py-4 text-on-surface dark:text-white font-medium">${inv.client}</td>
+                    <td class="px-6 py-4 text-sm text-on-surface-variant dark:text-slate-400">${inv.date}</td>
+                    <td class="px-6 py-4 font-bold dark:text-white">$${inv.amount}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 ${inv.status === 'PROCESADO' ? 'bg-green-100 dark:bg-green-900/40 text-green-700' : 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700'} rounded-full text-[10px] font-bold">
+                            ${inv.status}
+                        </span>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    } catch (error) {
+        console.error('Error cargando tabla:', error);
+    }
+}
+
+// 3. Previsualizar PDF desde OneDrive/Qdrant
+async function previewInvoice(invoiceId) {
+    const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
+    previewContainer.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-full">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+            <p class="text-xs">Cargando PDF...</p>
+        </div>
+    `;
+    
+    // Suponiendo que n8n devuelve el PDF binario
+    const pdfUrl = `${REAL_API_URL}/preview?id=${invoiceId}`;
+    previewContainer.innerHTML = `
+        <iframe src="${pdfUrl}" class="w-full h-[500px] border-none rounded-lg" title="Factura ${invoiceId}"></iframe>
+    `;
+}
+*/
