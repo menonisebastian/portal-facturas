@@ -3,17 +3,19 @@ import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.e
 
 createChat({
     webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat',
+    title: 'Asistente de Facturas', // Esto cambia el "Hi there!"
+    subtitle: 'Consulta inteligente de tus documentos', // Esto cambia el texto pequeño
     showWelcomeScreen: true,
-    title: 'Asistente de Facturas',
-    subtitle: 'Consulta inteligente de tus documentos',
     initialMessages: [
         '¡Hola! 👋 Soy tu asistente financiero.',
         '¿En qué puedo ayudarte hoy?'
     ],
     i18n: {
         en: {
-            getStarted: 'Empezar',
-            inputPlaceholder: 'Escribe tu duda sobre las facturas...',
+            title: 'Asistente de Facturas',
+            subtitle: 'Consulta inteligente de tus documentos',
+            getStarted: 'Empezar chat',
+            inputPlaceholder: 'Escribe tu duda...',
         }
     }
 });
