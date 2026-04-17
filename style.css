@@ -4,6 +4,20 @@
     --primary: #030086;
     --primary-container: #1111bb;
     --secondary: #4a47d2;
+    --surface: #fbf9f8;
+    --background: #fbf9f8;
+    --on-surface: #1b1c1c;
+    --on-background: #1b1c1c;
+    --on-surface-variant: #454555;
+}
+
+.dark {
+    --surface: #0f172a;
+    --background: #0f172a;
+    --on-surface: #ffffff;
+    --on-background: #ffffff;
+    --on-surface-variant: #94a3b8;
+    --primary: #bfc2ff;
 }
 
 /* Animations */
@@ -24,24 +38,23 @@
 /* Navigation Active State */
 .nav-item.active {
     color: var(--primary) !important;
-    background-color: rgba(255, 255, 255, 0.5);
-    border-left: 4px solid var(--primary);
-}
-
-.dark .nav-item.active {
-    background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* n8n Chat Overrides */
 div#n8n-chat .chat-header {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%) !important;
+    background: linear-gradient(135deg, #030086 0%, #1111bb 100%) !important;
     border-radius: 12px 12px 0 0 !important;
 }
 
 div#n8n-chat .chat-window-toggle {
-    background-color: var(--primary) !important;
+    background-color: #030086 !important;
     box-shadow: 0 10px 15px -3px rgba(3, 0, 134, 0.3) !important;
     transition: transform 0.2s !important;
+    z-index: 100 !important;
+}
+
+.dark div#n8n-chat .chat-window-toggle {
+    background-color: #3b39d1 !important;
 }
 
 div#n8n-chat .chat-window-toggle:hover {
@@ -54,9 +67,13 @@ div#n8n-chat .chat-window {
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1) !important;
 }
 
+.dark div#n8n-chat .chat-window {
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+#n8n-chat .chat-header h1, 
 #n8n-chat .chat-header p {
     color: #ffffff !important;
-    opacity: 0.9 !important;
     margin: 0 !important;
 }
 
@@ -75,6 +92,7 @@ div#n8n-chat .chat-window {
     border-radius: 12px !important;
     border: 1px solid #ddd !important;
     padding: 12px 45px 12px 12px !important;
+    color: #1b1c1c !important;
 }
 
 .dark #n8n-chat .chat-input textarea {
@@ -84,8 +102,12 @@ div#n8n-chat .chat-window {
 }
 
 #n8n-chat .chat-input-send-button {
-    background-color: var(--primary) !important;
+    background-color: #030086 !important;
     border-radius: 8px !important;
+}
+
+.dark #n8n-chat .chat-input-send-button {
+    background-color: #3b39d1 !important;
 }
 
 #n8n-chat .chat-input-send-button::before {
