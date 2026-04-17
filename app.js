@@ -1,7 +1,53 @@
-// --- 1. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) ---
+// --- 1. CONFIGURACIÓN Y NAVEGACIÓN SPA ---
+
+const sections = ['dashboard', 'invoices', 'upload', 'assistant'];
+const navItems = document.querySelectorAll('.nav-item');
+
+function showSection(sectionId) {
+    sections.forEach(id => {
+        const section = document.getElementById(`${id}-section`);
+        if (section) {
+            section.classList.toggle('hidden', id !== sectionId);
+        }
+    });
+
+    // Update active nav item
+    navItems.forEach(item => {
+        const isActive = item.getAttribute('data-section') === sectionId;
+        item.classList.toggle('active', isActive);
+        
+        // Tailwind classes for active/inactive
+        if (isActive) {
+            item.classList.add('text-[#1111bb]', 'bg-white/50', 'dark:bg-white/10', 'border-l-4', 'border-[#1111bb]');
+            item.classList.remove('text-[#454555]', 'dark:text-slate-400');
+        } else {
+            item.classList.remove('text-[#1111bb]', 'bg-white/50', 'dark:bg-white/10', 'border-l-4', 'border-[#1111bb]');
+            item.classList.add('text-[#454555]', 'dark:text-slate-400');
+        }
+    });
+
+    // Special logic for AI Assistant
+    if (sectionId === 'assistant') {
+        const chatToggle = document.querySelector('.chat-window-toggle');
+        const chatWindow = document.querySelector('.chat-window');
+        if (chatToggle && (!chatWindow || chatWindow.classList.contains('hidden'))) {
+            chatToggle.click();
+        }
+    }
+}
+
+// Event Listeners for Navigation
+navItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const section = item.getAttribute('data-section');
+        showSection(section);
+    });
+});
+
+// --- 2. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) ---
 import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.es.js';
 
-// Función para inicializar o actualizar el chat con el tema correcto
 function initChat(selectedTheme = 'light') {
     createChat({
         webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat',
@@ -13,7 +59,7 @@ function initChat(selectedTheme = 'light') {
             '¿En qué puedo ayudarte hoy?'
         ],
         i18n: {
-            en: {
+            es: {
                 title: 'Asistente de Facturas',
                 subtitle: 'Consulta inteligente de tus documentos',
                 inputPlaceholder: 'Escribe tu duda...',
@@ -22,35 +68,55 @@ function initChat(selectedTheme = 'light') {
     });
 }
 
-// Inicialización por defecto
-initChat('light');
+// Detectar preferencia de tema inicial
+const initialTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+initChat(initialTheme);
 
-// --- 2. LÓGICA DEL MODO OSCURO (BOTÓN ARRIBA A LA DERECHA) ---
+// --- 3. LÓGICA DEL MODO OSCURO ---
 const themeBtn = document.getElementById('theme-toggle');
+const themeIcon = document.getElementById('theme-icon');
+const themeText = document.getElementById('theme-text');
 
 if (themeBtn) {
     themeBtn.addEventListener('click', () => {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        const newTheme = isDark ? 'light' : 'dark';
+        const isDark = document.documentElement.classList.toggle('dark');
+        const newTheme = isDark ? 'dark' : 'light';
         
-        // Cambiar el atributo en el HTML para el CSS
-        document.documentElement.setAttribute('data-theme', newTheme);
-        
-        // Cambiar el icono del botón
-        themeBtn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        // Actualizar UI del botón
+        if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
+        if (themeText) themeText.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
         
         // Reiniciar el chat con el nuevo tema visual
         initChat(newTheme);
     });
 }
 
-// --- 3. LÓGICA DEL FORMULARIO DE SUBIDA DE FACTURAS ---
+// --- 4. LÓGICA DEL FORMULARIO DE SUBIDA DE FACTURAS ---
+const fileInput = document.getElementById('fileInput');
+const fileNameDisplay = document.getElementById('file-name');
+const fileInfoContainer = document.getElementById('file-info');
+
+// Mostrar nombre de archivo al seleccionar
+fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+        fileNameDisplay.textContent = `Archivo seleccionado: ${fileInput.files[0].name}`;
+        fileInfoContainer.classList.remove('hidden');
+    } else {
+        fileInfoContainer.classList.add('hidden');
+    }
+});
+
 document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault(); 
     
-    const fileInput = document.getElementById('fileInput');
     const submitBtn = document.getElementById('submitBtn');
-    const statusDiv = document.getElementById('status');
+    const statusCard = document.getElementById('status-card');
+    const statusTitle = document.getElementById('status-title');
+    const statusMessage = document.getElementById('status-message');
+    const statusProgress = document.getElementById('status-progress');
+    const statusPercentage = document.getElementById('status-percentage');
+    const statusIcon = document.getElementById('status-icon');
+    const statusIconContainer = document.getElementById('status-icon-container');
     
     const file = fileInput.files[0];
     if (!file) return;
@@ -60,10 +126,17 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     const formData = new FormData();
     formData.append("attachment_0", file);
 
+    // Actualizar UI para carga
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Enviando...';
-    statusDiv.textContent = 'Procesando factura, por favor espera...';
-    statusDiv.className = '';
+    submitBtn.querySelector('span').textContent = 'Enviando...';
+    
+    statusCard.classList.remove('hidden');
+    statusTitle.textContent = 'Procesando...';
+    statusMessage.textContent = 'Enviando factura a Precision AI...';
+    statusProgress.style.width = '30%';
+    statusPercentage.textContent = '30%';
+    statusIcon.textContent = 'sync';
+    statusIcon.classList.add('animate-spin');
 
     try {
         const response = await fetch(N8N_WEBHOOK_URL, {
@@ -71,32 +144,47 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             body: formData
         });
 
-        // Esperamos la respuesta final del flujo para dar un resultado real
+        statusProgress.style.width = '70%';
+        statusPercentage.textContent = '70%';
+        statusMessage.textContent = 'Analizando metadatos del documento...';
+
         const result = await response.json();
 
         if (response.ok && result) {
-            // Si el flujo devuelve un error específico (ej. "no es una factura") lo capturamos
             if (result.error_procesamiento) {
                 throw new Error(result.error_procesamiento);
             }
             
-            statusDiv.textContent = '¡Factura procesada con éxito y registrada en el sistema!';
-            statusDiv.className = 'success';
+            // Éxito
+            statusTitle.textContent = 'Completado';
+            statusMessage.textContent = '¡Factura procesada con éxito!';
+            statusProgress.style.width = '100%';
+            statusPercentage.textContent = '100%';
+            statusIcon.textContent = 'check_circle';
+            statusIcon.classList.remove('animate-spin');
+            statusIconContainer.classList.replace('bg-secondary-fixed', 'bg-green-100');
+            statusIcon.classList.add('text-green-600');
+            
             fileInput.value = ''; 
+            fileInfoContainer.classList.add('hidden');
         } else {
             throw new Error('El servidor de automatización no pudo procesar el archivo.');
         }
     } catch (error) {
-        statusDiv.textContent = `Error: ${error.message}`;
-        statusDiv.className = 'error';
+        statusTitle.textContent = 'Error';
+        statusMessage.textContent = error.message;
+        statusIcon.textContent = 'error';
+        statusIcon.classList.remove('animate-spin');
+        statusIconContainer.classList.replace('bg-secondary-fixed', 'bg-red-100');
+        statusIcon.classList.add('text-red-600');
+        statusProgress.classList.replace('bg-primary', 'bg-red-500');
     } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Enviar a Procesar';
+        submitBtn.querySelector('span').textContent = 'Subir otra factura';
     }
 });
 
-// --- 4. FIX DE ACTIVACIÓN DEL BOTÓN DE ENVÍO DEL CHAT ---
-// Revisa cada segundo si el botón de n8n está bloqueado y lo activa a la fuerza
+// --- 5. FIX DE ACTIVACIÓN DEL BOTÓN DE ENVÍO DEL CHAT ---
 setInterval(() => {
     const sendButton = document.querySelector('.chat-input-send-button');
     if (sendButton && sendButton.hasAttribute('disabled')) {

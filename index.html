@@ -1,107 +1,342 @@
 <!DOCTYPE html>
-<html lang="es">
+<html class="light" lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Facturas</title>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Portal de Facturas | Sysprovider</title>
     
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     
     <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/style.css" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css">
 
-    <style>
-          /* Colores del chat */
-          div#n8n-chat .chat-header {
-            background-color: #2563eb !important;
+    <script id="tailwind-config">
+          tailwind.config = {
+            darkMode: "class",
+            theme: {
+              extend: {
+                "colors": {
+                        "surface-dim": "#dbdad9",
+                        "tertiary": "#4f0200",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#ffdad4",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f5f3f3",
+                        "tertiary-container": "#780400",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#fbf9f8",
+                        "on-secondary-container": "#fffbff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#6462ec",
+                        "on-primary-fixed": "#02006e",
+                        "surface-container": "#efeded",
+                        "surface-variant": "#e4e2e2",
+                        "on-background": "#1b1c1c",
+                        "inverse-on-surface": "#f2f0f0",
+                        "surface-container-highest": "#e4e2e2",
+                        "primary-fixed-dim": "#bfc2ff",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#bfc2ff",
+                        "on-surface": "#1b1c1c",
+                        "surface-tint": "#4249de",
+                        "inverse-surface": "#303031",
+                        "outline": "#767686",
+                        "surface": "#fbf9f8",
+                        "on-primary-fixed-variant": "#262bc7",
+                        "tertiary-fixed-dim": "#ffb4a7",
+                        "primary-fixed": "#e0e0ff",
+                        "primary": "#030086",
+                        "on-tertiary-fixed-variant": "#8c170a",
+                        "on-primary-container": "#949aff",
+                        "outline-variant": "#c6c5d8",
+                        "surface-container-high": "#e9e8e7",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#332dbc",
+                        "secondary": "#4a47d2",
+                        "primary-container": "#1111bb",
+                        "on-tertiary-fixed": "#400100",
+                        "on-tertiary-container": "#ff7b66",
+                        "background": "#fbf9f8",
+                        "secondary-fixed": "#e2dfff",
+                        "secondary-fixed-dim": "#c2c1ff",
+                        "on-surface-variant": "#454555",
+                        "on-secondary-fixed": "#0b006b"
+                },
+                "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                },
+                "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                }
+              },
+            },
           }
-          div#n8n-chat .chat-window-toggle {
-            background-color: #2563eb !important;
-          }
-            #n8n-chat .chat-header p {
-                color: #ffffff !important; /* Blanco puro para que resalte sobre el azul */
-                opacity: 0.9 !important;   /* Un pelín de transparencia para que no brille tanto como el título */
-                margin: 0 !important;
-            }
-
-                 /* 1. Ajustamos el contenedor del pie de página para que tenga padding uniforme */
-        #n8n-chat .chat-footer {
-            padding: 15px !important; /* Mismo espacio por todos los lados */
-            background-color: #f9f9f9 !important;
-            border-top: 1px solid #eee !important;
-            display: block !important;
-        }
-        
-        /* 2. El contenedor del input ahora solo sirve para agrupar */
-        #n8n-chat .chat-input {
-            position: relative !important;
-            display: flex !important;
-            align-items: center !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-        
-        /* 3. El textarea con el espacio reservado para el botón */
-        #n8n-chat .chat-input textarea {
-            width: 100% !important;
-            padding: 12px 45px 12px 12px !important; /* Más espacio a la derecha para el botón */
-            border: 1px solid #ddd !important;
-            border-radius: 8px !important;
-            font-size: 14px !important;
-            box-sizing: border-box !important;
-            min-height: 45px !important;
-        }
-        
-        /* 4. El botón centrado dentro del textarea */
-        #n8n-chat .chat-input-send-button {
-            position: absolute !important;
-            right: 8px !important; /* Separación del borde derecho del textarea */
-            background-color: #2563eb !important;
-            border-radius: 6px !important;
-            height: 32px !important;
-            width: 32px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-        
-          /* 4. Inyectamos un icono de flecha blanca */
-          #n8n-chat .chat-input-send-button::before {
-            content: "➤" !important; /* Puedes usar ➔ o un emoji como ✈️ */
-            color: white !important;
-            font-size: 18px !important;
-          }
-        
-          /* 5. Ocultamos el SVG original de n8n para que no se amontone con nuestro icono */
-          #n8n-chat .chat-input-send-button svg {
-            display: none !important;
-          }
-    </style>
+    </script>
 </head>
-<body>
-    <button id="theme-toggle" class="theme-btn-toggle">🌙</button>
-    
-    <div class="main-container">
-        <div class="logo-container">
-            <img src="LOGO_SYSPROVIDER_DEGRADADO.svg" alt="Logo Empresa" class="company-logo">
+<body class="bg-surface font-body text-on-background antialiased overflow-hidden">
+
+<!-- Sidebar -->
+<aside class="h-full w-64 fixed left-0 top-0 bg-[#f5f3f3] dark:bg-slate-900 flex flex-col py-6 font-manrope font-semibold tracking-tight transition-all duration-300 z-50">
+    <div class="px-8 mb-10 flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-primary to-primary-container rounded-xl flex items-center justify-center text-white">
+            <span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
         </div>
-        
-        <div class="card">
-            <h2>Registro de Facturas</h2>
-            <p>Sube tu factura en formato PDF para procesarla en el sistema.</p>
-            
-            <form id="uploadForm">
-                <input type="file" id="fileInput" accept="application/pdf" required>
-                <button type="submit" id="submitBtn">Enviar a Procesar</button>
-            </form>
-            
-            <div id="status"></div>
+        <div>
+            <h1 class="text-xl font-bold text-[#1b1c1c] dark:text-white leading-tight">Sysprovider</h1>
+            <p class="text-[10px] text-on-surface-variant uppercase tracking-[0.15em]">Financial Portal</p>
         </div>
-    
-        <p class="autor">Desarrollado por Sebastián Menoni / Sysprovider SL</p>
     </div>
-    
-    <script type="module" src="app.js"></script>
+    <nav class="flex-1 space-y-2 px-4" id="main-nav">
+        <a href="#" data-section="dashboard" class="nav-item flex items-center gap-3 px-4 py-3 text-[#454555] dark:text-slate-400 hover:text-[#1111bb] hover:bg-white/40 dark:hover:bg-slate-800 transition-colors rounded-xl group">
+            <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+            <span>Dashboard</span>
+        </a>
+        <a href="#" data-section="invoices" class="nav-item flex items-center gap-3 px-4 py-3 text-[#454555] dark:text-slate-400 hover:text-[#1111bb] hover:bg-white/40 dark:hover:bg-slate-800 transition-colors rounded-xl group">
+            <span class="material-symbols-outlined" data-icon="description">description</span>
+            <span>Facturas</span>
+        </a>
+        <a href="#" data-section="upload" class="nav-item active flex items-center gap-3 px-4 py-3 text-[#1111bb] border-l-4 border-[#1111bb] bg-white/50 dark:bg-white/10 rounded-r-xl group">
+            <span class="material-symbols-outlined" data-icon="cloud_upload">cloud_upload</span>
+            <span>Subir Factura</span>
+        </a>
+        <a href="#" data-section="assistant" class="nav-item flex items-center gap-3 px-4 py-3 text-[#454555] dark:text-slate-400 hover:text-[#1111bb] hover:bg-white/40 dark:hover:bg-slate-800 transition-colors rounded-xl group">
+            <span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+            <span>Asistente AI</span>
+        </a>
+    </nav>
+    <div class="px-4 mt-auto pt-6 border-t border-outline-variant/10">
+        <a class="flex items-center gap-3 px-4 py-3 text-[#454555] dark:text-slate-400 hover:text-[#1111bb] hover:bg-white/40 transition-colors rounded-xl mb-2" href="#">
+            <span class="material-symbols-outlined" data-icon="settings">settings</span>
+            <span>Configuración</span>
+        </a>
+        <button id="theme-toggle" class="w-full flex items-center gap-3 px-4 py-3 text-[#454555] dark:text-slate-400 hover:text-[#1111bb] hover:bg-white/40 transition-colors rounded-xl">
+            <span class="material-symbols-outlined" id="theme-icon">dark_mode</span>
+            <span id="theme-text">Modo Oscuro</span>
+        </button>
+        <div class="mt-6 p-4 rounded-xl bg-surface-container-low flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg overflow-hidden bg-primary-fixed flex-shrink-0">
+                <img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTVEEg_238fXtdaWd4yIh6h3oruTAS0-4mSqzCn-42W8cOiJktBg2Fsh8CDb7TnD7refNBqPgerqqzTHaT_qJOX-uqexJuieebGM_WXZFc2pbMoNUgbzn3fr1bds07oNnYHW6EC7ZScN6QsMutmgqYVvO5xGLGrfy2miHm6A_a3-xfG50vKoHrysyVufzGj1TkPggfcPnNNm2ACNeKUx2tlQnmV7lr_ry9ITRZG11CS1LCrHamUxti5Kj5L5lj8TXvhCHg-zU7rdM"/>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-bold truncate">Sebastián Menoni</p>
+                <p class="text-[10px] text-on-surface-variant truncate">Administrador</p>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen flex flex-col transition-all duration-300">
+    <!-- Header -->
+    <header class="flex justify-between items-center h-16 px-8 bg-white/70 dark:bg-slate-950/70 backdrop-blur-xl sticky top-0 z-40 shadow-sm">
+        <div class="flex items-center flex-1 max-w-md">
+            <div class="relative w-full">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm" data-icon="search">search</span>
+                <input class="w-full pl-10 pr-4 py-2 bg-surface-container-low dark:bg-slate-800/50 border-none rounded-lg text-sm focus:ring-2 focus:ring-secondary/30 placeholder:text-on-surface-variant/50" placeholder="Buscar facturas..." type="text"/>
+            </div>
+        </div>
+        <div class="flex items-center gap-6 text-on-surface-variant">
+            <div class="flex items-center gap-4">
+                <button class="hover:text-[#1111bb] transition-all relative">
+                    <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+                    <span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full border-2 border-white"></span>
+                </button>
+                <button class="hover:text-[#1111bb] transition-all">
+                    <span class="material-symbols-outlined" data-icon="history">history</span>
+                </button>
+            </div>
+            <div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/30">
+                <img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4oGkxwVXHu0o9kcLxR3eR1WDaqo28ouznJyuUosRGv7FSrsTVnJ72S-Gy6H-DZi0yd8awAjpmHZpf2cBs4NMnF_Mbdg3mvJrC-vVWF38YGs-H5WDy8RHPd0IrXZqVY1n_Qd77SGSYSHbj04nUkw7pr0MEII3fexbw9MP9nUYz2KLQBTCFlUt7yBbMHXkHsUMJGq9vktzZcIYiR1zdI7YjLORRpvDFBECEUkGFD3PrkPldA0GB5dbkbNVo1abjVp3xkEjsj7fKB0Y"/>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content Sections -->
+    <div class="p-8 flex-1 overflow-y-auto" id="content-container">
+        
+        <!-- Dashboard Section (Hidden by default) -->
+        <section id="dashboard-section" class="hidden animate-in fade-in duration-500">
+            <div class="mb-10">
+                <h1 class="text-4xl font-extrabold text-on-surface font-headline tracking-tight mb-2">Resumen General</h1>
+                <p class="text-on-surface-variant font-medium">Control total de tu facturación y automatizaciones.</p>
+            </div>
+            <div class="grid grid-cols-12 gap-6">
+                <div class="col-span-12 md:col-span-4 p-8 rounded-xl bg-white dark:bg-slate-800 transition-all hover:shadow-xl group">
+                    <p class="text-xs font-bold text-on-surface-variant tracking-widest uppercase mb-4">Facturas Procesadas</p>
+                    <div class="flex items-end justify-between">
+                        <h2 class="text-5xl font-extrabold text-on-surface font-headline tracking-tighter">1,284</h2>
+                        <div class="flex items-center text-green-600 font-bold text-sm bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
+                            <span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span> 12%
+                        </div>
+                    </div>
+                </div>
+                <div class="col-span-12 md:col-span-4 p-8 rounded-xl bg-white dark:bg-slate-800 transition-all hover:shadow-xl group">
+                    <p class="text-xs font-bold text-on-surface-variant tracking-widest uppercase mb-4">Pendientes de Revisión</p>
+                    <div class="flex items-end justify-between">
+                        <h2 class="text-5xl font-extrabold text-on-surface font-headline tracking-tighter">42</h2>
+                        <div class="w-12 h-12 rounded-full bg-error-container/20 flex items-center justify-center text-error">
+                            <span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-span-12 md:col-span-4 p-8 rounded-xl bg-white dark:bg-slate-800 transition-all hover:shadow-xl group">
+                    <p class="text-xs font-bold text-on-surface-variant tracking-widest uppercase mb-4">Volumen Mensual</p>
+                    <div class="flex items-end justify-between">
+                        <h2 class="text-5xl font-extrabold text-on-surface font-headline tracking-tighter">$42k</h2>
+                        <span class="text-on-surface-variant text-sm font-medium">Abril 2026</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Invoices Section (Hidden by default) -->
+        <section id="invoices-section" class="hidden animate-in fade-in duration-500">
+             <div class="mb-10">
+                <h2 class="text-4xl font-headline font-extrabold text-on-surface tracking-tight">Historial de Facturas</h2>
+                <p class="text-on-surface-variant mt-2 max-w-lg">Listado detallado de todos los documentos procesados por el sistema.</p>
+            </div>
+            <div class="bg-white dark:bg-slate-800/50 rounded-xl shadow-sm overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-surface-container-low dark:bg-slate-800 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                            <th class="px-6 py-4">ID Factura</th>
+                            <th class="px-6 py-4">Cliente</th>
+                            <th class="px-6 py-4">Fecha</th>
+                            <th class="px-6 py-4">Importe</th>
+                            <th class="px-6 py-4">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-outline-variant/10">
+                        <tr class="hover:bg-primary-fixed/30 cursor-pointer transition-colors">
+                            <td class="px-6 py-4 font-bold text-primary">#INV-2024-001</td>
+                            <td class="px-6 py-4 text-on-surface font-medium">Global Corp</td>
+                            <td class="px-6 py-4 text-sm text-on-surface-variant">15 Abri, 2026</td>
+                            <td class="px-6 py-4 font-bold">$1,250.00</td>
+                            <td class="px-6 py-4"><span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold">PROCESADO</span></td>
+                        </tr>
+                        <tr class="hover:bg-primary-fixed/30 cursor-pointer transition-colors">
+                            <td class="px-6 py-4 font-bold text-primary">#INV-2024-002</td>
+                            <td class="px-6 py-4 text-on-surface font-medium">Stellar Systems</td>
+                            <td class="px-6 py-4 text-sm text-on-surface-variant">16 Abri, 2026</td>
+                            <td class="px-6 py-4 font-bold">$840.00</td>
+                            <td class="px-6 py-4"><span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-[10px] font-bold">PENDIENTE</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Upload Section (Visible by default) -->
+        <section id="upload-section" class="animate-in fade-in duration-500">
+            <div class="mb-10">
+                <span class="text-[10px] font-bold text-primary tracking-[0.2em] uppercase mb-2 block">Procesamiento de Datos</span>
+                <h2 class="text-4xl font-headline font-extrabold text-on-surface tracking-tight">Subir Factura</h2>
+                <p class="text-on-surface-variant mt-2 max-w-lg">Nuestro motor de IA extraerá los metadatos, validará los conceptos y conciliará la información en tiempo real.</p>
+            </div>
+            
+            <div class="grid grid-cols-12 gap-8 items-start">
+                <div class="col-span-12 lg:col-span-7 space-y-6">
+                    <!-- Form Container -->
+                    <form id="uploadForm" class="relative group">
+                        <div class="absolute -inset-0.5 bg-gradient-to-br from-primary to-secondary rounded-xl opacity-0 group-hover:opacity-10 blur-md transition-opacity duration-300"></div>
+                        <div class="relative bg-white dark:bg-slate-800 border-2 border-dashed border-outline-variant/30 rounded-xl p-12 flex flex-col items-center justify-center text-center transition-all hover:border-primary/50">
+                            <div class="w-20 h-20 bg-primary-fixed rounded-full flex items-center justify-center mb-6">
+                                <span class="material-symbols-outlined text-primary text-4xl" data-icon="upload_file">upload_file</span>
+                            </div>
+                            <h3 class="text-xl font-headline font-bold text-on-surface mb-2">Arrastra tu factura aquí</h3>
+                            <p class="text-on-surface-variant text-sm mb-8">Formatos aceptados: PDF. Máximo 25MB.</p>
+                            
+                            <input type="file" id="fileInput" accept="application/pdf" required class="hidden">
+                            <label for="fileInput" class="px-8 py-3 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded-xl shadow-lg hover:scale-105 transition-transform cursor-pointer">
+                                Seleccionar Archivo
+                            </label>
+                            
+                            <div id="file-info" class="mt-4 hidden animate-in slide-in-from-bottom-2">
+                                <p class="text-sm font-bold text-primary" id="file-name"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <button type="submit" id="submitBtn" class="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-xl hover:bg-primary-container transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span>Enviar a Procesar</span>
+                                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1" data-icon="arrow_forward">arrow_forward</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Status Display -->
+                    <div id="status-card" class="hidden bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-outline-variant/10">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div id="status-icon-container" class="w-10 h-10 bg-secondary-fixed rounded-lg flex items-center justify-center">
+                                    <span id="status-icon" class="material-symbols-outlined text-secondary" data-icon="sync">sync</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold" id="status-title">Procesando...</p>
+                                    <p class="text-[10px] text-on-surface-variant" id="status-message">Por favor espera un momento.</p>
+                                </div>
+                            </div>
+                            <div id="status-percentage" class="text-xs font-bold text-primary">0%</div>
+                        </div>
+                        <div class="w-full h-2 bg-surface-container-low rounded-full overflow-hidden">
+                            <div id="status-progress" class="h-full bg-primary rounded-full transition-all duration-300" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <div id="status" class="hidden"></div> <!-- Legacy status for app.js compat -->
+                </div>
+
+                <!-- Preview Area -->
+                <div class="col-span-12 lg:col-span-5">
+                    <div class="bg-surface-container-low dark:bg-slate-900 rounded-xl p-6 relative group overflow-hidden">
+                        <div class="absolute top-4 right-4 z-10 flex gap-2">
+                             <div class="px-3 py-1 bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-lg text-[10px] font-bold text-primary uppercase tracking-widest">Vista Previa AI</div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 rounded-lg p-8 min-h-[400px] flex flex-col items-center justify-center text-center">
+                            <span class="material-symbols-outlined text-6xl text-outline-variant mb-4" data-icon="description">description</span>
+                            <p class="text-on-surface-variant text-sm max-w-[200px]">Selecciona una factura para previsualizar los datos extraídos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Assistant Section (Hidden by default) -->
+        <section id="assistant-section" class="hidden flex flex-col h-full animate-in fade-in duration-500">
+            <div class="mb-8">
+                <h2 class="text-4xl font-headline font-extrabold text-on-surface tracking-tight">Asistente Inteligente</h2>
+                <p class="text-on-surface-variant mt-2 max-w-2xl">Consulta tus facturas y obtén análisis financieros instantáneos mediante lenguaje natural.</p>
+            </div>
+            <div class="flex-1 bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-primary/5 border border-outline-variant/10 overflow-hidden min-h-[500px] flex flex-col relative">
+                <!-- n8n chat will be integrated here or float over it -->
+                <div id="chat-placeholder" class="flex-1 flex flex-col items-center justify-center text-center p-12">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                         <span class="material-symbols-outlined text-primary text-3xl" data-icon="smart_toy">smart_toy</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-on-surface mb-2">Iniciando Asistencia...</h3>
+                    <p class="text-on-surface-variant text-sm max-w-sm">El asistente se abrirá en la parte inferior derecha.</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="p-8 border-t border-outline-variant/10 text-center">
+        <p class="text-[10px] text-on-surface-variant uppercase tracking-widest">Desarrollado por Sebastián Menoni / Sysprovider SL</p>
+    </footer>
+</main>
+
+<script type="module" src="app.js"></script>
 
 </body>
 </html>
