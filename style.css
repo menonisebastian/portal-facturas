@@ -69,6 +69,15 @@ div#n8n-chat .chat-window {
 
 .dark div#n8n-chat .chat-window {
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background-color: #0f172a !important;
+}
+
+.dark #n8n-chat .chat-message-list {
+    background-color: #0f172a !important;
+}
+
+.dark #n8n-chat .chat-input {
+    background-color: #1e293b !important;
 }
 
 #n8n-chat .chat-header h1, 
@@ -101,6 +110,15 @@ div#n8n-chat .chat-window {
     color: white !important;
 }
 
+.dark #n8n-chat .chat-message-bubble-assistant {
+    background-color: #1e293b !important;
+    color: white !important;
+}
+
+.dark #n8n-chat .chat-message-bubble-user {
+    background-color: #030086 !important;
+}
+
 #n8n-chat .chat-input-send-button {
     background-color: #030086 !important;
     border-radius: 8px !important;
@@ -108,6 +126,22 @@ div#n8n-chat .chat-window {
 
 .dark #n8n-chat .chat-input-send-button {
     background-color: #3b39d1 !important;
+}
+
+/* Add padding between input and send button */
+#n8n-chat .chat-input {
+    gap: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+#n8n-chat .chat-input textarea {
+    padding: 12px !important; /* Normal padding since we use gap now */
+}
+
+#n8n-chat .chat-input-send-button {
+    position: static !important; /* Remove absolute positioning to use gap */
+    min-width: 40px !important;
 }
 
 #n8n-chat .chat-input-send-button::before {
