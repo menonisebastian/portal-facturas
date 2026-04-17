@@ -9,6 +9,15 @@ createChat({
         '¡Hola! 👋 Soy tu asistente financiero.',
         '¿En qué puedo ayudarte hoy?'
     ],
+    theme: {
+        primaryColor: '#2563eb',        // Azul principal (botones, bordes)
+        secondaryColor: '#f3f4f6',      // Gris claro (fondo de mensajes del bot)
+        textColor: '#1f2937',           // Color de texto principal
+        backgroundColor: '#ffffff',     // Fondo del chat
+        messageBackgroundColor: '#eff6ff', // Fondo de mensajes del usuario
+        botMessageColor: '#1f2937',     // Color de texto de mensajes del bot
+        userMessageColor: '#ffffff'     // Color de texto de mensajes del usuario
+    },
     i18n: {
         en: {
             title: 'Asistente de Facturas',
