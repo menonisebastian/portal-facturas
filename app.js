@@ -1,24 +1,50 @@
-// --- 1. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) DESDE CDN ---
+// --- 1. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) ---
 import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.es.js';
 
-createChat({
-    webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat',
-    title: 'Asistente de Facturas',
-    subtitle: 'Consulta inteligente de tus documentos',
-    initialMessages: [
-        '¡Hola! 👋 Soy tu asistente financiero.',
-        '¿En qué puedo ayudarte hoy?'
-    ],
-    i18n: {
-        en: {
-            title: 'Asistente de Facturas',
-            subtitle: 'Consulta inteligente de tus documentos',
-            inputPlaceholder: 'Escribe tu duda...',
+// Función para inicializar o actualizar el chat con el tema correcto
+function initChat(selectedTheme = 'light') {
+    createChat({
+        webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat',
+        theme: selectedTheme,
+        title: 'Asistente de Facturas',
+        subtitle: 'Consulta inteligente de tus documentos',
+        initialMessages: [
+            '¡Hola! 👋 Soy tu asistente financiero.',
+            '¿En qué puedo ayudarte hoy?'
+        ],
+        i18n: {
+            en: {
+                title: 'Asistente de Facturas',
+                subtitle: 'Consulta inteligente de tus documentos',
+                inputPlaceholder: 'Escribe tu duda...',
+            }
         }
-    }
-});
+    });
+}
 
-// --- 2. LÓGICA DEL FORMULARIO DE SUBIDA DE FACTURAS ---
+// Inicialización por defecto
+initChat('light');
+
+// --- 2. LÓGICA DEL MODO OSCURO (BOTÓN ARRIBA A LA DERECHA) ---
+const themeBtn = document.getElementById('theme-toggle');
+
+if (themeBtn) {
+    themeBtn.addEventListener('click', () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const newTheme = isDark ? 'light' : 'dark';
+        
+        // Cambiar el atributo en el HTML para el CSS
+        document.documentElement.setAttribute('data-theme', newTheme);
+        
+        // Cambiar el icono del botón
+        themeBtn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        
+        // Reiniciar el chat con el nuevo tema visual
+        initChat(newTheme);
+    });
+}
+
+// --- 3. LÓGICA DEL FORMULARIO DE SUBIDA DE FACTURAS ---
 document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault(); 
     
@@ -29,7 +55,6 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     const file = fileInput.files[0];
     if (!file) return;
 
-    // Webhook del Flujo 1 (El Ingestor)
     const N8N_WEBHOOK_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/subir-factura';
 
     const formData = new FormData();
@@ -37,7 +62,7 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Enviando...';
-    statusDiv.textContent = '';
+    statusDiv.textContent = 'Procesando factura, por favor espera...';
     statusDiv.className = '';
 
     try {
@@ -46,18 +71,38 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             body: formData
         });
 
-        if (response.ok) {
-            statusDiv.textContent = '¡Factura enviada y almacenada en Qdrant!';
+        // Esperamos la respuesta final del flujo para dar un resultado real
+        const result = await response.json();
+
+        if (response.ok && result) {
+            // Si el flujo devuelve un error específico (ej. "no es una factura") lo capturamos
+            if (result.error_procesamiento) {
+                throw new Error(result.error_procesamiento);
+            }
+            
+            statusDiv.textContent = '¡Factura procesada con éxito y registrada en el sistema!';
             statusDiv.className = 'success';
             fileInput.value = ''; 
         } else {
-            throw new Error('Error en el servidor');
+            throw new Error('El servidor de automatización no pudo procesar el archivo.');
         }
     } catch (error) {
-        statusDiv.textContent = 'Error al enviar. Revisa la URL del Webhook o tu conexión.';
+        statusDiv.textContent = `Error: ${error.message}`;
         statusDiv.className = 'error';
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Enviar a Procesar';
     }
 });
+
+// --- 4. FIX DE ACTIVACIÓN DEL BOTÓN DE ENVÍO DEL CHAT ---
+// Revisa cada segundo si el botón de n8n está bloqueado y lo activa a la fuerza
+setInterval(() => {
+    const sendButton = document.querySelector('.chat-input-send-button');
+    if (sendButton && sendButton.hasAttribute('disabled')) {
+        sendButton.removeAttribute('disabled');
+        sendButton.style.opacity = "1";
+        sendButton.style.cursor = "pointer";
+        sendButton.style.pointerEvents = "auto";
+    }
+}, 1000);
