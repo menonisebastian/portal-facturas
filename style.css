@@ -20,7 +20,7 @@ body {
 .logo-container {
     width: 100%;
     text-align: center;
-    margin-bottom: 2rem; /* Espacio generoso antes de la card */
+    margin-bottom: 1rem; /* Espacio generoso antes de la card */
 }
 
 .company-logo {
