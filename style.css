@@ -29,6 +29,10 @@ body {
     height: auto;
 }
 
+.autor {
+    text-align: center;
+}
+
 .card {
     background: white;
     padding: 2rem;
