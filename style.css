@@ -1,17 +1,17 @@
 
 /* Forzar el color del botón flotante y la cabecera del chat */
 :root {
-    --chat--primary-color: #2563eb !important;
+    --chat--primary-color: #16a34a !important;
     --chat--primary-color-dark: #1d4ed8 !important;
 }
 
 /* Si lo anterior no es suficiente, forzamos las clases específicas */
 .n8n-chat-widget {
-    --chat--primary-color: #2563eb !important;
+    --chat--primary-color: #16a34a !important;
 }
 
 #n8n-chat-container .chat-header {
-    background-color: #2563eb !important;
+    background-color: #16a34a !important;
 }
 
 body {
