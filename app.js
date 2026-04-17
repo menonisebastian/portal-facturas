@@ -2,7 +2,7 @@
 import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.es.js';
 
 createChat({
-    webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2',
+    webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat',
     showWelcomeScreen: true,
     title: 'Asistente de Facturas',
     subtitle: 'Consulta inteligente de tus documentos',
