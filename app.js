@@ -2,7 +2,7 @@
 import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.es.js';
 
 createChat({
-    webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/chat-asistente-facturas'
+    webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat'
 });
 
 // --- 2. LÓGICA DEL FORMULARIO DE SUBIDA DE FACTURAS ---
