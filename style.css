@@ -1,11 +1,46 @@
+/* Variables de color */
+:root {
+    --bg-color: #f3f4f6;
+    --card-bg: #ffffff;
+    --text-color: #1f2937;
+}
+
+[data-theme="dark"] {
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --text-color: #f1f5f9;
+}
+
 body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #f3f4f6;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     margin: 0;
+}
+
+/* El botón arriba a la derecha */
+.theme-btn-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 15px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--card-bg);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    font-size: 1.2rem;
+    z-index: 1000;
+    transition: transform 0.2s ease;
+}
+
+.theme-btn-toggle:hover {
+    transform: scale(1.1);
 }
 
 /* Contenedor principal para agrupar logo + card */
@@ -34,7 +69,8 @@ body {
 }
 
 .card {
-    background: white;
+    background-color: var(--card-bg) !important;
+    transition: background-color 0.3s ease;
     padding: 2rem;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -43,8 +79,8 @@ body {
     text-align: center;
 }
 
-h2 { color: #1f2937; margin-top: 0; }
-p { color: #4b5563; font-size: 0.9rem; margin-bottom: 1.5rem; }
+h2 { color: --text-color; margin-top: 0; }
+p { color: --text-color; font-size: 0.9rem; margin-bottom: 1.5rem; }
 
 input[type="file"] {
     display: block;
