@@ -18,19 +18,32 @@
             background-color: #2563eb !important;
           }
 
-            /* Localizamos el botón de enviar dentro del chat */
-          #n8n-chat button.chat-input-send-button {
-            opacity: 1 !important;
-            cursor: pointer !important;
-            pointer-events: auto !important;
-            display: flex !important;
+           /* 1. Evitamos que el input pise al botón */
+          #n8n-chat .chat-input {
+            width: calc(100% - 50px) !important; /* Le quita espacio para que quepa el botón */
+            flex: 1 !important;
+            padding-right: 10px !important;
           }
         
-          /* Si el botón está visualmente oculto o deshabilitado por una clase */
-          #n8n-chat button.chat-input-send-button[disabled] {
-            opacity: 1 !important;
-            filter: none !important;
+          /* 2. Forzamos al botón a mantener su tamaño y estar al frente */
+          #n8n-chat .chat-send-button {
+            width: 40px !important;
+            min-width: 40px !important;
+            height: 40px !important;
+            z-index: 10 !important; /* Lo pone por encima del input */
             cursor: pointer !important;
+            pointer-events: auto !important;
+            opacity: 1 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+        
+          /* 3. Aseguramos que el contenedor del footer no los amontone */
+          #n8n-chat .chat-footer {
+            display: flex !important;
+            align-items: center !important;
+            gap: 5px !important; /* Espacio entre el texto y el botón */
           }
     </style>
 </head>
