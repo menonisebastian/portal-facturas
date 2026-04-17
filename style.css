@@ -51,6 +51,16 @@
     color: var(--primary) !important;
 }
 
+/* Sidebar Responsive Helper */
+#sidebar-overlay.active {
+    display: block !important;
+    opacity: 1 !important;
+}
+
+#sidebar.active {
+    transform: translateX(0) !important;
+}
+
 /* n8n Chat Overrides */
 div#n8n-chat .chat-header {
     background: linear-gradient(135deg, #030086 0%, #1111bb 100%) !important;

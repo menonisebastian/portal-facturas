@@ -2,6 +2,24 @@
 
 const sections = ['dashboard', 'invoices', 'upload', 'assistant'];
 const navItems = document.querySelectorAll('.nav-item');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebar-overlay');
+const burgerBtn = document.getElementById('hamburger-menu');
+const closeSidebarBtn = document.getElementById('close-sidebar');
+
+function toggleSidebar(forceClose = false) {
+    if (forceClose) {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+    } else {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+}
+
+if (burgerBtn) burgerBtn.addEventListener('click', () => toggleSidebar());
+if (overlay) overlay.addEventListener('click', () => toggleSidebar(true));
+if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', () => toggleSidebar(true));
 
 function showSection(sectionId) {
     sections.forEach(id => {
@@ -25,6 +43,11 @@ function showSection(sectionId) {
             item.classList.add('text-[#454555]', 'dark:text-slate-400');
         }
     });
+
+    // Close sidebar on mobile after selection
+    if (window.innerWidth < 1024) {
+        toggleSidebar(true);
+    }
 
     // Special logic for AI Assistant tab
     if (sectionId === 'assistant') {
