@@ -95,7 +95,14 @@ div#n8n-chat .chat-window {
     border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-#n8n-chat .chat-header h1, 
+#n8n-chat .chat-header h1 {
+    color: #ffffff !important;
+    margin: 0 !important;
+    text-transform: uppercase !important;
+    font-weight: 800 !important;
+    font-size: 1.1rem !important;
+}
+
 #n8n-chat .chat-header p {
     color: #ffffff !important;
     margin: 0 !important;
@@ -129,7 +136,7 @@ div#n8n-chat .chat-window {
     gap: 12px !important;
     display: flex !important;
     align-items: center !important;
-    padding-right: 15px !important;
+    padding: 0 !important; /* Remove internal padding to use footer padding instead */
 }
 
 #n8n-chat .chat-input-send-button {
