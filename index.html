@@ -18,39 +18,43 @@
             background-color: #2563eb !important;
           }
 
-                 /* 1. Contenedor relativo para poder posicionar el botón dentro */
-        #n8n-chat .chat-input {
-            position: relative !important;
-            display: block !important; /* Cambiamos de grid a block para controlar mejor el interior */
-            padding: 5px !important;
-            background: transparent !important;
-        }
-
-        /* 2. El input ocupa todo el ancho pero le restamos espacio a la derecha */
-        #n8n-chat .chat-input textarea {
-            width: 100% !important;
-            box-sizing: border-box !important;
-            padding-right: 50px !important; /* ESTO es lo que le resta tamaño al área de escritura */
-            padding-left: 12px !important;
-            padding-top: 10px !important;
-            padding-bottom: 10px !important;
-            border: 1px solid #ccc !important;
-            border-radius: 8px !important;
-            background: white !important;
+                 /* 1. Ajustamos el contenedor del pie de página para que tenga padding uniforme */
+        #n8n-chat .chat-footer {
+            padding: 15px !important; /* Mismo espacio por todos los lados */
+            background-color: #f9f9f9 !important;
+            border-top: 1px solid #eee !important;
             display: block !important;
         }
         
-        /* 3. Posicionamos el botón DENTRO de la caja a la derecha */
+        /* 2. El contenedor del input ahora solo sirve para agrupar */
+        #n8n-chat .chat-input {
+            position: relative !important;
+            display: flex !important;
+            align-items: center !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* 3. El textarea con el espacio reservado para el botón */
+        #n8n-chat .chat-input textarea {
+            width: 100% !important;
+            padding: 12px 45px 12px 12px !important; /* Más espacio a la derecha para el botón */
+            border: 1px solid #ddd !important;
+            border-radius: 8px !important;
+            font-size: 14px !important;
+            box-sizing: border-box !important;
+            min-height: 45px !important;
+        }
+        
+        /* 4. El botón centrado dentro del textarea */
         #n8n-chat .chat-input-send-button {
             position: absolute !important;
-            right: 10px !important; /* Lo pegamos al borde derecho interno */
-            top: 50% !important;
-            transform: translateY(-50%) !important; /* Lo centramos verticalmente */
-            height: 32px !important;
-            width: 32px !important;
+            right: 8px !important; /* Separación del borde derecho del textarea */
             background-color: #2563eb !important;
             border-radius: 6px !important;
-            z-index: 5 !important;
+            height: 32px !important;
+            width: 32px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
