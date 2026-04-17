@@ -10,6 +10,11 @@ createChat({
         '¡Hola! 👋 Soy tu asistente financiero.',
         '¿En qué puedo ayudarte hoy?'
     ],
+    // --- AQUÍ CAMBIAS LOS COLORES ---
+    styles: {
+        "--chat--primary-color": "#2563eb", // Color del botón y cabecera
+        "--chat--primary-color-dark": "#1d4ed8", // Color al pasar el ratón
+    },
     i18n: {
         en: {
             title: 'Asistente de Facturas',
