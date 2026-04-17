@@ -24,19 +24,18 @@ body {
 }
 
 /* El botón arriba a la derecha */
-.theme-btn-toggle {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 10px 15px;
-    border-radius: 50%;
-    border: none;
-    background-color: var(--card-bg);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    font-size: 1.2rem;
-    z-index: 1000;
-    transition: transform 0.2s ease;
+#theme-toggle {
+    position: fixed !important; /* Lo saca del flujo normal */
+    top: 20px !important;       /* Distancia desde arriba */
+    right: 20px !important;     /* Distancia desde la derecha */
+    width: 50px !important;      /* Ancho fijo para que no ocupe toda la pantalla */
+    height: 50px !important;     /* Altura fija */
+    padding: 0 !important;       /* Sin relleno extra */
+    border-radius: 50% !important; /* Redondo */
+    z-index: 1000 !important;    /* Siempre por encima de todo */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 .theme-btn-toggle:hover {
