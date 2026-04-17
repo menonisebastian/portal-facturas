@@ -8,6 +8,17 @@ body {
     margin: 0;
 }
 
+logo-container {
+    text-align: center;   /* Centra el logo horizontalmente */
+    margin-bottom: 20px;  /* Espacio entre el logo y la tarjeta */
+}
+
+.company-logo {
+    max-width: 250px;     /* Ajusta este valor según el tamaño que prefieras */
+    height: auto;         /* Mantiene la proporción del logo */
+    display: inline-block;
+}
+
 .card {
     background: white;
     padding: 2rem;
