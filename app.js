@@ -50,6 +50,12 @@ navItems.forEach(item => {
 import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.es.js';
 
 function initChat(selectedTheme = 'light') {
+    // Clean up existing chat widget if it exists to avoid duplication
+    const existingChat = document.querySelector('div#n8n-chat') || document.querySelector('.n8n-chat-widget');
+    if (existingChat) {
+        existingChat.remove();
+    }
+
     createChat({
         webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat',
         theme: selectedTheme,
@@ -72,14 +78,19 @@ function initChat(selectedTheme = 'light') {
                 getStarted: 'Comenzar',
             }
         },
-        customCSS: selectedTheme === 'dark' ? `
-            .chat-window { background-color: #0f172a !important; }
-            .chat-message-list { background-color: #0f172a !important; }
-            .chat-message-bubble-assistant { background-color: #1e293b !important; color: white !important; }
-            .chat-message-bubble-user { background-color: #030086 !important; }
-            .chat-input { background-color: #1e293b !important; }
-            .chat-input textarea { background-color: #0f172a !important; color: white !important; border-color: #334155 !important; }
-        ` : ''
+        theme: {
+            mode: selectedTheme,
+            customCSS: selectedTheme === 'dark' ? `
+                .chat-body, .chat-layout, .chat-footer, .chat-messages-list { 
+                    background-color: #0f172a !important; 
+                    background: #0f172a !important;
+                }
+                .chat-message.chat-message-from-bot { background-color: #1e293b !important; color: white !important; }
+                .chat-message.chat-message-from-user { background-color: #030086 !important; color: white !important; }
+                .chat-input { background-color: #0f172a !important; border-top: 1px solid #334155 !important; }
+                .chat-input textarea { background-color: #1e293b !important; color: white !important; border-color: #475569 !important; }
+            ` : ''
+        }
     });
 }
 
