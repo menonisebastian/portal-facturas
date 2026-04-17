@@ -1,0 +1,51 @@
+// --- 1. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) ---
+import { createChat } from 'https://n8n-automatizacion.178.105.8.162.sslip.io/chat/bundle.js';
+
+createChat({
+    webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/chat-asistente-facturas'
+});
+
+
+// --- 2. LÓGICA DEL FORMULARIO DE SUBIDA DE FACTURAS ---
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault(); 
+    
+    const fileInput = document.getElementById('fileInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusDiv = document.getElementById('status');
+    
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    // Webhook del Flujo 1 (El Ingestor)
+    const N8N_WEBHOOK_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/subir-factura';
+
+    const formData = new FormData();
+    formData.append("attachment_0", file);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Enviando...';
+    statusDiv.textContent = '';
+    statusDiv.className = '';
+
+    try {
+        const response = await fetch(N8N_WEBHOOK_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            statusDiv.textContent = '¡Factura enviada y almacenada en Qdrant!';
+            statusDiv.className = 'success';
+            fileInput.value = ''; 
+        } else {
+            throw new Error('Error en el servidor');
+        }
+    } catch (error) {
+        statusDiv.textContent = 'Error al enviar. Revisa la URL del Webhook o tu conexión.';
+        statusDiv.className = 'error';
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Enviar a Procesar';
+    }
+});
