@@ -79,27 +79,29 @@
     </style>
 </head>
 <body>
-<div class="main-container">
-    <div class="logo-container">
-        <img src="LOGO_SYSPROVIDER_DEGRADADO.svg" alt="Logo Empresa" class="company-logo">
+    <button id="theme-toggle" class="theme-btn-toggle">🌙</button>
+    
+    <div class="main-container">
+        <div class="logo-container">
+            <img src="LOGO_SYSPROVIDER_DEGRADADO.svg" alt="Logo Empresa" class="company-logo">
+        </div>
+        
+        <div class="card">
+            <h2>Registro de Facturas</h2>
+            <p>Sube tu factura en formato PDF para procesarla en el sistema.</p>
+            
+            <form id="uploadForm">
+                <input type="file" id="fileInput" accept="application/pdf" required>
+                <button type="submit" id="submitBtn">Enviar a Procesar</button>
+            </form>
+            
+            <div id="status"></div>
+        </div>
+    
+        <p class="autor">Desarrollado por Sebastián Menoni / Sysprovider SL</p>
     </div>
     
-    <div class="card">
-        <h2>Registro de Facturas</h2>
-        <p>Sube tu factura en formato PDF para procesarla en el sistema.</p>
-        
-        <form id="uploadForm">
-            <input type="file" id="fileInput" accept="application/pdf" required>
-            <button type="submit" id="submitBtn">Enviar a Procesar</button>
-        </form>
-        
-        <div id="status"></div>
-    </div>
-
-    <p class="autor">Desarrollado por Sebastián Menoni / Sysprovider SL</p>
-</div>
-
-<script type="module" src="app.js"></script>
+    <script type="module" src="app.js"></script>
 
 </body>
 </html>
