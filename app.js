@@ -12,7 +12,7 @@ createChat({
     ],
     // --- AQUÍ CAMBIAS LOS COLORES ---
     styles: {
-        "--chat--primary-color": "#2563eb", // Color del botón y cabecera
+        "--chat--primary-color": "#16a34a", // Color del botón y cabecera
         "--chat--primary-color-dark": "#1d4ed8", // Color al pasar el ratón
     },
     i18n: {
