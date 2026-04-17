@@ -1,10 +1,9 @@
-// --- 1. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) ---
-import { createChat } from 'https://n8n-automatizacion.178.105.8.162.sslip.io/chat/bundle.js';
+// --- 1. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) DESDE CDN ---
+import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.es.js';
 
 createChat({
     webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/chat-asistente-facturas'
 });
-
 
 // --- 2. LÓGICA DEL FORMULARIO DE SUBIDA DE FACTURAS ---
 document.getElementById('uploadForm').addEventListener('submit', async (e) => {
