@@ -21,7 +21,7 @@ if (burgerBtn) burgerBtn.addEventListener('click', () => toggleSidebar());
 if (overlay) overlay.addEventListener('click', () => toggleSidebar(true));
 if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', () => toggleSidebar(true));
 
-function showSection(sectionId) {
+function showSection(sectionId, updateHistory = true) {
     sections.forEach(id => {
         const section = document.getElementById(`${id}-section`);
         if (section) {
@@ -49,6 +49,12 @@ function showSection(sectionId) {
         toggleSidebar(true);
     }
 
+    // Update URL without page reload
+    if (updateHistory) {
+        const path = sectionId === 'dashboard' ? '/' : `/${sectionId}`;
+        window.history.pushState({ sectionId }, '', path);
+    }
+
     // Special logic for AI Assistant tab
     if (sectionId === 'assistant') {
         const chatToggle = document.querySelector('.chat-window-toggle');
@@ -60,6 +66,13 @@ function showSection(sectionId) {
     }
 }
 
+// Router Logic
+function handleRouting() {
+    const path = window.location.pathname.replace('/', '') || 'dashboard';
+    const sectionId = sections.includes(path) ? path : 'dashboard';
+    showSection(sectionId, false);
+}
+
 // Event Listeners for Navigation
 navItems.forEach(item => {
     item.addEventListener('click', (e) => {
@@ -68,6 +81,18 @@ navItems.forEach(item => {
         showSection(section);
     });
 });
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', (e) => {
+    if (e.state && e.state.sectionId) {
+        showSection(e.state.sectionId, false);
+    } else {
+        handleRouting();
+    }
+});
+
+// Initial Load
+handleRouting();
 
 // --- 2. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) ---
 import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.es.js';
