@@ -7,6 +7,13 @@ const overlay = document.getElementById('sidebar-overlay');
 const burgerBtn = document.getElementById('hamburger-menu');
 const closeSidebarBtn = document.getElementById('close-sidebar');
 
+// Función para convertir números de Excel (Serial Dates) a fecha legible
+function excelToJSDate(serial) {
+    if (!serial || isNaN(serial)) return serial; // Si ya es texto, lo deja igual
+    const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
+    return date.toLocaleDateString('es-ES'); // Formato DD/MM/YYYY
+}
+
 function toggleSidebar(forceClose = false) {
     if (forceClose) {
         sidebar.classList.remove('active');
@@ -455,11 +462,11 @@ async function loadRealDashboardData() {
 }
 
 // 2. Cargar lista de facturas desde Excel (OneDrive) vía n8n
+// 2. Cargar lista de facturas desde Excel (OneDrive) vía n8n
 async function loadRealInvoicesTable() {
     const tbody = document.querySelector('#invoices-section tbody');
     if (!tbody) return;
 
-    // --- MEJORA: Limpiar y mostrar spinner INMEDIATAMENTE ---
     tbody.innerHTML = `
         <tr>
             <td colspan="5" class="px-6 py-10 text-center">
@@ -476,24 +483,25 @@ async function loadRealInvoicesTable() {
         if (!response.ok) throw new Error('Error al conectar con n8n');
         
         const invoices = await response.json();
-        
-        // Limpiar el estado de carga antes de pintar los datos reales
         tbody.innerHTML = ''; 
 
         if (invoices.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No hay facturas disponibles.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-on-surface-variant">No hay facturas disponibles.</td></tr>';
             return;
         }
 
         invoices.forEach(inv => {
+            // --- AQUÍ LA MAGIA: Convertimos la fecha de Excel a algo legible ---
+            const fechaFormateada = excelToJSDate(inv.date);
+
             const row = `
-                <tr class="hover:bg-primary-fixed/30 dark:hover:bg-white/5 cursor-pointer transition-colors" onclick="previewInvoice('${inv.id}')">
+                <tr class="hover:bg-primary-fixed/30 dark:hover:bg-white/5 cursor-pointer transition-colors border-b border-outline-variant/10" onclick="previewInvoice('${inv.id}')">
                     <td class="px-6 py-4 font-bold text-primary dark:text-[#bfc2ff]">${inv.id}</td>
                     <td class="px-6 py-4 text-on-surface dark:text-white font-medium">${inv.client}</td>
-                    <td class="px-6 py-4 text-sm text-on-surface-variant dark:text-slate-400">${inv.date}</td>
+                    <td class="px-6 py-4 text-sm text-on-surface-variant dark:text-slate-400">${fechaFormateada}</td>
                     <td class="px-6 py-4 font-bold dark:text-white">$${inv.amount}</td>
                     <td class="px-6 py-4">
-                        <span class="px-3 py-1 ${inv.status === 'PROCESADO' ? 'bg-green-100 dark:bg-green-900/40 text-green-700' : 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700'} rounded-full text-[10px] font-bold">
+                        <span class="px-3 py-1 ${inv.status === 'PROCESADO' ? 'bg-green-100 dark:bg-green-900/40 text-green-700' : 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700'} rounded-full text-[10px] font-bold uppercase tracking-wider">
                             ${inv.status}
                         </span>
                     </td>
@@ -506,7 +514,6 @@ async function loadRealInvoicesTable() {
         tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500 text-sm">Error: ${error.message}</td></tr>`;
     }
 }
-
 // 3. Previsualizar PDF desde OneDrive/Qdrant
 async function previewInvoice(invoiceId) {
     const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
