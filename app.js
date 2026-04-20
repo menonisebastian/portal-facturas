@@ -73,13 +73,6 @@ function showSection(sectionId, updateHistory = true) {
     }
 }
 
-// Router Logic
-function handleRouting() {
-    const path = window.location.pathname.replace('/', '') || 'dashboard';
-    const sectionId = sections.includes(path) ? path : 'dashboard';
-    showSection(sectionId, false);
-}
-
 // Event Listeners for Navigation
 navItems.forEach(item => {
     item.addEventListener('click', (e) => {
@@ -385,4 +378,11 @@ async function previewInvoice(invoiceId) {
     previewContainer.innerHTML = `
         <iframe src="${pdfUrl}" class="w-full h-[500px] border-none rounded-lg" title="Factura ${invoiceId}"></iframe>
     `;
+}
+
+// Router Logic
+function handleRouting() {
+    const path = window.location.pathname.replace('/', '') || 'dashboard';
+    const sectionId = sections.includes(path) ? path : 'dashboard';
+    showSection(sectionId, false);
 }
