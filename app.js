@@ -8,9 +8,14 @@ const burgerBtn = document.getElementById('hamburger-menu');
 const closeSidebarBtn = document.getElementById('close-sidebar');
 const logoutBtn = document.getElementById('logout-btn');
 if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
+    logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault(); // Evitamos que el router intente procesar el clic
+        
+        // 1. Limpiamos la sesión
         localStorage.removeItem('portal_unlocked');
-        window.location.href = 'login.html';
+        
+        // 2. Redirección forzada (reemplazando el historial para que no pueda volver atrás)
+        window.location.replace('login.html');
     });
 }
 
