@@ -6,6 +6,13 @@ const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('sidebar-overlay');
 const burgerBtn = document.getElementById('hamburger-menu');
 const closeSidebarBtn = document.getElementById('close-sidebar');
+const logoutBtn = document.getElementById('logout-btn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('portal_unlocked');
+        window.location.href = 'login.html';
+    });
+}
 
 // Función para convertir números de Excel (Serial Dates) a fecha legible
 function excelToJSDate(serial) {
