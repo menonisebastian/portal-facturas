@@ -235,13 +235,17 @@ if (uploadForm) {
             const result = await response.json();
 
             if (response.ok && result) {
-                if (result.error_procesamiento) {
-                    throw new Error(result.error_procesamiento);
+                // 1. Evaluamos si n8n nos dice explícitamente que falló o no es factura
+                if (result.exito === false || result.error || result.error_procesamiento) {
+                    // Lanzamos el error con el mensaje exacto que venga de n8n
+                    throw new Error(result.mensaje || result.error || result.error_procesamiento || 'El documento fue rechazado por la IA.');
                 }
                 
-                // Éxito
+                // 2. Éxito validado
                 statusTitle.textContent = 'Completado';
-                statusMessage.textContent = '¡Factura procesada con éxito!';
+                // Pintamos el mensaje dinámico que venga de n8n (o uno por defecto)
+                statusMessage.textContent = result.mensaje || '¡Factura procesada con éxito!';
+                
                 statusProgress.style.width = '100%';
                 statusPercentage.textContent = '100%';
                 statusIcon.textContent = 'check_circle';
