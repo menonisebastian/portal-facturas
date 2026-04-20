@@ -1,5 +1,10 @@
 // --- 1. CONFIGURACIÓN Y NAVEGACIÓN SPA ---
 
+// Si el guard ya está redirigiendo, no ejecutar nada de app.js
+if (!sessionStorage.getItem('sp_portal_auth')) {
+    throw new Error("Acceso no autorizado: Deteniendo ejecución de app.js");
+}
+
 const sections = ['dashboard', 'invoices', 'upload', 'assistant'];
 const navItems = document.querySelectorAll('.nav-item');
 const sidebar = document.getElementById('sidebar');
