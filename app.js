@@ -172,16 +172,30 @@ if (themeBtn) {
 }
 
 // --- 4. LÓGICA DEL FORMULARIO DE SUBIDA DE FACTURAS ---
+// --- 4. LÓGICA DEL FORMULARIO DE SUBIDA DE FACTURAS ---
 const fileInput = document.getElementById('fileInput');
 const fileNameDisplay = document.getElementById('file-name');
 const fileInfoContainer = document.getElementById('file-info');
 
-// Mostrar nombre de archivo al seleccionar
+// 1. Mostrar nombre de archivo y VISTA PREVIA DEL PDF al seleccionar
 if (fileInput) {
     fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) {
-            fileNameDisplay.textContent = `Archivo seleccionado: ${fileInput.files[0].name}`;
+        const file = fileInput.files[0];
+        if (file) {
+            fileNameDisplay.textContent = `Archivo seleccionado: ${file.name}`;
             fileInfoContainer.classList.remove('hidden');
+
+            // --- VISTA PREVIA DEL PDF ORIGINAL ---
+            const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
+            if (previewContainer) {
+                const fileURL = URL.createObjectURL(file);
+                previewContainer.innerHTML = `
+                    <div class="absolute top-4 right-4 z-10 flex gap-2">
+                         <div class="px-3 py-1 bg-slate-800/90 backdrop-blur rounded-lg text-[10px] font-bold text-white uppercase tracking-widest">Documento Original</div>
+                    </div>
+                    <iframe src="${fileURL}#toolbar=0" class="w-full h-[500px] border-none rounded-lg shadow-inner" title="Vista previa local"></iframe>
+                `;
+            }
         } else {
             fileInfoContainer.classList.add('hidden');
         }
@@ -201,6 +215,7 @@ if (uploadForm) {
         const statusPercentage = document.getElementById('status-percentage');
         const statusIcon = document.getElementById('status-icon');
         const statusIconContainer = document.getElementById('status-icon-container');
+        const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
         
         const file = fileInput.files[0];
         if (!file) return;
@@ -216,11 +231,21 @@ if (uploadForm) {
         
         statusCard.classList.remove('hidden');
         statusTitle.textContent = 'Procesando...';
-        statusMessage.textContent = 'Enviando factura a Precision AI...';
+        statusMessage.textContent = 'Enviando factura a la IA...';
         statusProgress.style.width = '30%';
         statusPercentage.textContent = '30%';
         statusIcon.textContent = 'sync';
         statusIcon.classList.add('animate-spin');
+        
+        // Mostrar animación de lectura en el visor derecho
+        if (previewContainer) {
+             previewContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-[500px] bg-white/50 dark:bg-slate-800/50 rounded-lg">
+                    <span class="material-symbols-outlined text-6xl text-primary animate-pulse mb-4">document_scanner</span>
+                    <p class="text-sm font-bold text-primary dark:text-[#bfc2ff] animate-pulse">IA Extrayendo datos...</p>
+                </div>
+            `;
+        }
 
         try {
             const response = await fetch(N8N_WEBHOOK_URL, {
@@ -235,17 +260,13 @@ if (uploadForm) {
             const result = await response.json();
 
             if (response.ok && result) {
-                // 1. Evaluamos si n8n nos dice explícitamente que falló o no es factura
                 if (result.exito === false || result.error || result.error_procesamiento) {
-                    // Lanzamos el error con el mensaje exacto que venga de n8n
-                    throw new Error(result.mensaje || result.error || result.error_procesamiento || 'El documento fue rechazado por la IA.');
+                    throw new Error(result.mensaje || result.error || result.error_procesamiento || 'El documento fue rechazado.');
                 }
                 
-                // 2. Éxito validado
+                // Éxito en barra lateral
                 statusTitle.textContent = 'Completado';
-                // Pintamos el mensaje dinámico que venga de n8n (o uno por defecto)
                 statusMessage.textContent = result.mensaje || '¡Factura procesada con éxito!';
-                
                 statusProgress.style.width = '100%';
                 statusPercentage.textContent = '100%';
                 statusIcon.textContent = 'check_circle';
@@ -254,10 +275,61 @@ if (uploadForm) {
                 statusIconContainer.classList.add('bg-green-100', 'dark:bg-green-900/40');
                 statusIcon.classList.add('text-green-600', 'dark:text-green-400');
                 
+                // --- 2. VISTA PREVIA DE "FACTURA REAL" (TICKET DIGITAL) ---
+                if (previewContainer) {
+                    // Tomamos los datos de n8n (soporta mayúsculas y minúsculas por si acaso)
+                    const prov = result.PROVEEDOR || result.proveedor || "Proveedor";
+                    const num = result.NUMERO || result.numero_factura || "S/N";
+                    const fecha = result['FECHA FACTURA'] || result.fecha_factura || "-";
+                    const base = result.BASE || result.base_imponible || "0.00";
+                    const iva = result.CUOTAIVA || result.cuota_iva || "0.00";
+                    const total = result.TOTAL || result.total_factura || "0.00";
+                    const moneda = result.MONEDA || result.moneda || "EUR";
+
+                    previewContainer.innerHTML = `
+                        <div class="absolute top-4 right-4 z-10 flex gap-2">
+                             <div class="px-3 py-1 bg-green-500/90 backdrop-blur rounded-lg text-[10px] font-bold text-white uppercase tracking-widest">Extracción Exitosa</div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 rounded-lg p-6 w-full h-[500px] flex items-center justify-center border border-outline-variant/20 shadow-sm">
+                            
+                            <div class="w-full max-w-sm bg-surface-container-lowest dark:bg-slate-900 p-8 rounded-xl shadow-2xl font-mono text-sm relative border border-outline-variant/10">
+                                
+                                <div class="text-center border-b border-dashed border-outline-variant/50 pb-4 mb-4">
+                                    <span class="material-symbols-outlined text-5xl text-primary dark:text-[#bfc2ff] mb-2">storefront</span>
+                                    <h3 class="font-bold text-xl text-on-surface dark:text-white uppercase truncate">${prov}</h3>
+                                    <p class="text-[10px] text-on-surface-variant mt-1 tracking-widest">FACTURA Nº ${num}</p>
+                                </div>
+
+                                <div class="space-y-3 mb-6">
+                                    <div class="flex justify-between"><span class="text-on-surface-variant">Emisión:</span> <span class="font-bold dark:text-white">${fecha}</span></div>
+                                    <div class="flex justify-between"><span class="text-on-surface-variant">Estado:</span> <span class="text-green-600 font-bold">Verificado IA</span></div>
+                                </div>
+
+                                <div class="border-t border-b border-dashed border-outline-variant/50 py-4 my-4 space-y-3">
+                                    <div class="flex justify-between"><span class="text-on-surface-variant">Base Imponible</span> <span class="dark:text-white">${base}</span></div>
+                                    <div class="flex justify-between"><span class="text-on-surface-variant">Impuestos (IVA)</span> <span class="dark:text-white">${iva}</span></div>
+                                </div>
+
+                                <div class="flex justify-between items-center text-2xl font-bold text-primary dark:text-[#bfc2ff]">
+                                    <span>TOTAL</span>
+                                    <span>${total} ${moneda}</span>
+                                </div>
+
+                                <div class="mt-8 flex justify-center opacity-30 dark:invert">
+                                    <svg class="h-10 w-full" preserveAspectRatio="none" viewBox="0 0 100 10">
+                                        <path d="M0,0 h2 v10 h-2 z M4,0 h1 v10 h-1 z M7,0 h3 v10 h-3 z M12,0 h1 v10 h-1 z M15,0 h4 v10 h-4 z M21,0 h2 v10 h-2 z M25,0 h1 v10 h-1 z M28,0 h3 v10 h-3 z M33,0 h2 v10 h-2 z M37,0 h1 v10 h-1 z M40,0 h4 v10 h-4 z M46,0 h2 v10 h-2 z M50,0 h1 v10 h-1 z M53,0 h3 v10 h-3 z M58,0 h2 v10 h-2 z M62,0 h1 v10 h-1 z M65,0 h4 v10 h-4 z M71,0 h2 v10 h-2 z M75,0 h1 v10 h-1 z M78,0 h3 v10 h-3 z M83,0 h2 v10 h-2 z M87,0 h1 v10 h-1 z M90,0 h4 v10 h-4 z M96,0 h2 v10 h-2 z" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                        </div>
+                    `;
+                }
+
                 fileInput.value = ''; 
                 fileInfoContainer.classList.add('hidden');
             } else {
-                throw new Error('El servidor de automatización no pudo procesar el archivo.');
+                throw new Error('El servidor no pudo procesar el archivo.');
             }
         } catch (error) {
             statusTitle.textContent = 'Error';
@@ -269,6 +341,16 @@ if (uploadForm) {
             statusIcon.classList.add('text-red-600', 'dark:text-red-400');
             statusProgress.classList.remove('bg-primary', 'dark:bg-[#bfc2ff]');
             statusProgress.classList.add('bg-red-500');
+            
+            // Si hay error, mostrar un visor de error
+            if (previewContainer) {
+                previewContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-[500px] bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800">
+                        <span class="material-symbols-outlined text-6xl text-red-500 mb-4">warning</span>
+                        <p class="text-sm font-bold text-red-700 dark:text-red-400">Error en la lectura del documento.</p>
+                    </div>
+                `;
+            }
         } finally {
             submitBtn.disabled = false;
             submitBtn.querySelector('span').textContent = 'Subir otra factura';
