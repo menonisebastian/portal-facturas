@@ -317,16 +317,35 @@ async function loadRealDashboardData() {
 
 // 2. Cargar lista de facturas desde Excel (OneDrive) vía n8n
 async function loadRealInvoicesTable() {
+    const tbody = document.querySelector('#invoices-section tbody');
+    if (!tbody) return;
+
+    // --- MEJORA: Limpiar y mostrar spinner INMEDIATAMENTE ---
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="5" class="px-6 py-10 text-center">
+                <div class="flex flex-col items-center justify-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
+                    <p class="text-xs font-medium text-on-surface-variant">Cargando facturas desde Excel...</p>
+                </div>
+            </td>
+        </tr>
+    `;
+
     try {
-        // Llamamos directamente al Webhook configurado que nos devuelve la lista mapeada
         const response = await fetch(REAL_API_URL);
+        if (!response.ok) throw new Error('Error al conectar con n8n');
+        
         const invoices = await response.json();
         
-        const tbody = document.querySelector('#invoices-section tbody');
-        if (!tbody) return;
-        
-        tbody.innerHTML = ''; // Limpiar tabla actual
-        
+        // Limpiar el estado de carga antes de pintar los datos reales
+        tbody.innerHTML = ''; 
+
+        if (invoices.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No hay facturas disponibles.</td></tr>';
+            return;
+        }
+
         invoices.forEach(inv => {
             const row = `
                 <tr class="hover:bg-primary-fixed/30 dark:hover:bg-white/5 cursor-pointer transition-colors" onclick="previewInvoice('${inv.id}')">
@@ -344,7 +363,8 @@ async function loadRealInvoicesTable() {
             tbody.innerHTML += row;
         });
     } catch (error) {
-        console.error('Error cargando tabla de facturas:', error);
+        console.error('Error cargando tabla:', error);
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500 text-sm">Error: ${error.message}</td></tr>`;
     }
 }
 
