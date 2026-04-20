@@ -70,6 +70,8 @@ function showSection(sectionId, updateHistory = true) {
     // 6. Cargar los datos reales una sola vez cuando se visita la sección de facturas
     if (sectionId === 'invoices') {
         loadRealInvoicesTable();
+    } else if (sectionId === 'dashboard') {
+        loadRealDashboardData();
     }
 }
 
@@ -91,8 +93,12 @@ window.addEventListener('popstate', (e) => {
     }
 });
 
-// Initial Load
-handleRouting();
+// Router Logic
+function handleRouting() {
+    const path = window.location.pathname.replace('/', '') || 'dashboard';
+    const sectionId = sections.includes(path) ? path : 'dashboard';
+    showSection(sectionId, false);
+}
 
 // --- 2. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) ---
 import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.es.js';
@@ -295,16 +301,59 @@ const REAL_API_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/
 
 // 1. Cargar datos del Dashboard desde Excel (OneDrive) vía n8n
 async function loadRealDashboardData() {
+    const elProcesadas = document.getElementById('dash-procesadas');
+    const elPendientes = document.getElementById('dash-pendientes');
+    const elVolumen = document.getElementById('dash-volumen');
+
+    if (!elProcesadas || !elPendientes || !elVolumen) return;
+
+    // --- Mostrar estado de carga (animación de parpadeo) ---
+    const loadingHtml = '<span class="text-3xl text-slate-400 animate-pulse">...</span>';
+    elProcesadas.innerHTML = loadingHtml;
+    elPendientes.innerHTML = loadingHtml;
+    elVolumen.innerHTML = loadingHtml;
+
     try {
-        // Nota: Para usar esto, necesitarás crear otro webhook en n8n para las estadísticas
-        // o calcularlas dinámicamente en el frontend basándote en la lista.
-        // const response = await fetch(`${REAL_API_URL}-stats`);
-        // const data = await response.json();
-        // document.getElementById('total-invoices').textContent = data.count;
-        // document.getElementById('total-amount').textContent = `$${data.total_amount}`;
-        console.log('Función de Dashboard lista para ser conectada a un nuevo endpoint.');
+        const response = await fetch(REAL_API_URL);
+        if (!response.ok) throw new Error('Error al conectar con n8n');
+        
+        const invoices = await response.json();
+        
+        // --- Variables matemáticas ---
+        let totalProcesadas = 0;
+        let totalPendientes = 0;
+        let volumenTotal = 0;
+
+        // --- Calcular estadísticas ---
+        invoices.forEach(inv => {
+            if (inv.status === 'PROCESADO') {
+                totalProcesadas++;
+            } else {
+                totalPendientes++;
+            }
+
+            // Convertir el importe a número seguro (reemplaza comas por puntos si las hay en el Excel)
+            let importe = parseFloat(String(inv.amount).replace(',', '.')) || 0;
+            volumenTotal += importe;
+        });
+
+        // Dar formato de moneda europea (ej. 1.250,00 €)
+        const formatoMoneda = new Intl.NumberFormat('es-ES', { 
+            style: 'currency', 
+            currency: 'EUR',
+            maximumFractionDigits: 0 // Quitar decimales para que se vea más limpio como "$42k"
+        }).format(volumenTotal);
+
+        // --- Inyectar los resultados en el HTML ---
+        elProcesadas.textContent = totalProcesadas;
+        elPendientes.textContent = totalPendientes;
+        elVolumen.textContent = formatoMoneda;
+
     } catch (error) {
         console.error('Error cargando Dashboard:', error);
+        elProcesadas.innerHTML = '<span class="text-xl text-red-500">Error</span>';
+        elPendientes.innerHTML = '<span class="text-xl text-red-500">Error</span>';
+        elVolumen.innerHTML = '<span class="text-xl text-red-500">Error</span>';
     }
 }
 
@@ -380,9 +429,6 @@ async function previewInvoice(invoiceId) {
     `;
 }
 
-// Router Logic
-function handleRouting() {
-    const path = window.location.pathname.replace('/', '') || 'dashboard';
-    const sectionId = sections.includes(path) ? path : 'dashboard';
-    showSection(sectionId, false);
-}
+
+// Initial Load
+handleRouting();
