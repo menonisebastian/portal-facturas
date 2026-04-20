@@ -304,8 +304,19 @@ async function loadRealDashboardData() {
     const elProcesadas = document.getElementById('dash-procesadas');
     const elPendientes = document.getElementById('dash-pendientes');
     const elVolumen = document.getElementById('dash-volumen');
+    const elMesActual = document.getElementById('dash-mes-actual');
 
-    if (!elProcesadas || !elPendientes || !elVolumen) return;
+    if (!elProcesadas || !elPendientes || !elVolumen || !elMesActual) return;
+
+    // --- 1. Formatear Fecha Dinámica ---
+    const fecha = new Date();
+    const nombreMes = fecha.toLocaleString('es-ES', { month: 'long' });
+    const anio = fecha.getFullYear();
+    // Capitalizamos la primera letra (ej: "abril" -> "Abril")
+    const mesCapitalizado = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+    
+    // Actualizamos el texto en el HTML
+    elMesActual.textContent = `${mesCapitalizado} ${anio}`;
 
     // --- Mostrar estado de carga (animación de parpadeo) ---
     const loadingHtml = '<span class="text-3xl text-slate-400 animate-pulse">...</span>';
