@@ -22,6 +22,7 @@ if (overlay) overlay.addEventListener('click', () => toggleSidebar(true));
 if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', () => toggleSidebar(true));
 
 function showSection(sectionId, updateHistory = true) {
+    // 1. Mostrar/ocultar secciones (EL BUCLE DEJA DE AFECTAR A LA CARGA)
     sections.forEach(id => {
         const section = document.getElementById(`${id}-section`);
         if (section) {
@@ -29,7 +30,7 @@ function showSection(sectionId, updateHistory = true) {
         }
     });
 
-    // Update active nav item
+    // 2. Update active nav item
     navItems.forEach(item => {
         const isActive = item.getAttribute('data-section') === sectionId;
         item.classList.toggle('active', isActive);
@@ -44,18 +45,18 @@ function showSection(sectionId, updateHistory = true) {
         }
     });
 
-    // Close sidebar on mobile after selection
+    // 3. Close sidebar on mobile after selection
     if (window.innerWidth < 1024) {
         toggleSidebar(true);
     }
 
-    // Update URL without page reload
+    // 4. Update URL without page reload
     if (updateHistory) {
         const path = sectionId === 'dashboard' ? '/' : `/${sectionId}`;
         window.history.pushState({ sectionId }, '', path);
     }
 
-    // Special logic for AI Assistant tab
+    // 5. Special logic for AI Assistant tab
     if (sectionId === 'assistant') {
         const chatToggle = document.querySelector('.chat-window-toggle');
         const chatWindow = document.querySelector('.chat-window');
@@ -63,6 +64,12 @@ function showSection(sectionId, updateHistory = true) {
         if (chatToggle && (!chatWindow || chatWindow.classList.contains('hidden') || chatWindow.style.display === 'none')) {
             chatToggle.click();
         }
+    }
+
+    // --- AQUÍ ES EL LUGAR CORRECTO ---
+    // 6. Cargar los datos reales una sola vez cuando se visita la sección de facturas
+    if (sectionId === 'invoices') {
+        loadRealInvoicesTable();
     }
 }
 
@@ -288,23 +295,21 @@ setInterval(() => {
     }
 }, 1000);
 
-/* 
-// --- 6. INTEGRACIÓN REAL CON N8N (EJEMPLOS PARA ACTIVAR) ---
-// Estas funciones están comentadas para que sigas viendo los datos de prueba.
-// Para activarlas, descomenta el código y llama a la función correspondiente.
+
+// --- 6. INTEGRACIÓN REAL CON N8N ---
 
 const REAL_API_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/api-portal';
 
 // 1. Cargar datos del Dashboard desde Excel (OneDrive) vía n8n
 async function loadRealDashboardData() {
     try {
-        const response = await fetch(`${REAL_API_URL}/stats`);
-        const data = await response.json();
-        
-        // Actualizar valores en el DOM (asegúrate de que los IDs existan en index.html)
+        // Nota: Para usar esto, necesitarás crear otro webhook en n8n para las estadísticas
+        // o calcularlas dinámicamente en el frontend basándote en la lista.
+        // const response = await fetch(`${REAL_API_URL}-stats`);
+        // const data = await response.json();
         // document.getElementById('total-invoices').textContent = data.count;
         // document.getElementById('total-amount').textContent = `$${data.total_amount}`;
-        console.log('Datos de Dashboard cargados:', data);
+        console.log('Función de Dashboard lista para ser conectada a un nuevo endpoint.');
     } catch (error) {
         console.error('Error cargando Dashboard:', error);
     }
@@ -313,10 +318,13 @@ async function loadRealDashboardData() {
 // 2. Cargar lista de facturas desde Excel (OneDrive) vía n8n
 async function loadRealInvoicesTable() {
     try {
-        const response = await fetch(`${REAL_API_URL}/list`);
+        // Llamamos directamente al Webhook configurado que nos devuelve la lista mapeada
+        const response = await fetch(REAL_API_URL);
         const invoices = await response.json();
         
         const tbody = document.querySelector('#invoices-section tbody');
+        if (!tbody) return;
+        
         tbody.innerHTML = ''; // Limpiar tabla actual
         
         invoices.forEach(inv => {
@@ -336,13 +344,15 @@ async function loadRealInvoicesTable() {
             tbody.innerHTML += row;
         });
     } catch (error) {
-        console.error('Error cargando tabla:', error);
+        console.error('Error cargando tabla de facturas:', error);
     }
 }
 
 // 3. Previsualizar PDF desde OneDrive/Qdrant
 async function previewInvoice(invoiceId) {
     const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
+    if (!previewContainer) return;
+    
     previewContainer.innerHTML = `
         <div class="flex flex-col items-center justify-center h-full">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
@@ -350,10 +360,9 @@ async function previewInvoice(invoiceId) {
         </div>
     `;
     
-    // Suponiendo que n8n devuelve el PDF binario
-    const pdfUrl = `${REAL_API_URL}/preview?id=${invoiceId}`;
+    // Suponiendo que n8n devuelve el PDF binario (requeriría un nuevo flujo en n8n)
+    const pdfUrl = `${REAL_API_URL}-preview?id=${invoiceId}`;
     previewContainer.innerHTML = `
         <iframe src="${pdfUrl}" class="w-full h-[500px] border-none rounded-lg" title="Factura ${invoiceId}"></iframe>
     `;
 }
-*/
