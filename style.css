@@ -188,3 +188,13 @@ div#n8n-chat .chat-window {
 .dark ::-webkit-scrollbar-thumb {
     background: #334155;
 }
+
+/* Forzar icono blanco dentro del botón del chat en modo oscuro */
+.dark div#n8n-chat .chat-window-toggle svg,
+.dark div#n8n-chat .chat-window-toggle svg path,
+.dark div#n8n-chat .chat-window-toggle svg polyline,
+.dark div#n8n-chat .chat-window-toggle svg line {
+    fill: white !important;
+    stroke: white !important;
+    color: white !important;
+}
