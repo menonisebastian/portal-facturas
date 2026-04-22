@@ -59,10 +59,10 @@ function showSection(sectionId, updateHistory = true) {
         
         // Tailwind classes for active/inactive
         if (isActive) {
-            item.classList.add('text-[#1111bb]', 'dark:text-[#bfc2ff]', 'bg-white/50', 'dark:bg-white/10', 'border-l-4', 'border-[#1111bb]');
+            item.classList.add('text-[#1111bb]', 'dark:text-[#bfc2ff]', 'bg-white/50', 'dark:bg-white/10', 'border-l-4', 'border-[#1111bb]', 'rounded-xl');
             item.classList.remove('text-[#454555]', 'dark:text-slate-400');
         } else {
-            item.classList.remove('text-[#1111bb]', 'dark:text-[#bfc2ff]', 'bg-white/50', 'dark:bg-white/10', 'border-l-4', 'border-[#1111bb]');
+            item.classList.remove('text-[#1111bb]', 'dark:text-[#bfc2ff]', 'bg-white/50', 'dark:bg-white/10', 'border-l-4', 'border-[#1111bb]', 'rounded-xl');
             item.classList.add('text-[#454555]', 'dark:text-slate-400');
         }
     });
