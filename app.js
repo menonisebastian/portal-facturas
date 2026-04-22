@@ -167,7 +167,33 @@ function initChat(selectedTheme = 'light') {
                 .chat-input textarea { background-color: #1e293b !important; color: white !important; border-color: #475569 !important; }
             ` : ''
         }
+        
     });
+
+    // Limpiar mensajes de error crudo de n8n
+setTimeout(() => {
+    const chatContainer = document.getElementById('n8n-chat');
+    if (!chatContainer) return;
+
+    const observer = new MutationObserver(() => {
+        chatContainer.querySelectorAll('.chat-message-from-bot').forEach(msg => {
+            if (msg.dataset.sanitized) return;
+            const text = msg.innerText || msg.textContent || '';
+
+            const esError = text.includes('Error in workflow') 
+                || text.includes('"message"')
+                || text.startsWith('{')
+                || text.startsWith('[');
+
+            if (esError) {
+                msg.textContent = '⚠️ El asistente tiene un problema técnico temporal. Por favor, inténtalo de nuevo en unos minutos.';
+            }
+            msg.dataset.sanitized = 'true';
+        });
+    });
+
+    observer.observe(chatContainer, { childList: true, subtree: true });
+}, 1500); // esperar a que el widget cargue
 }
 
 // Detectar preferencia de tema inicial
