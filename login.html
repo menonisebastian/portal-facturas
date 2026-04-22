@@ -28,6 +28,7 @@
             justify-content: center;
             overflow: hidden;
             position: relative;
+            padding: 1rem;
         }
 
         /* Background geometric decoration */
@@ -83,6 +84,13 @@
                 0 8px 24px rgba(3,0,134,0.08),
                 0 32px 64px rgba(3,0,134,0.06);
             animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 32px 24px;
+                border-radius: 16px;
+            }
         }
 
         @keyframes slideUp {
@@ -187,6 +195,7 @@
             background: var(--surface);
             transition: border-color 0.2s, box-shadow 0.2s;
             outline: none;
+            min-width: 0;
             -webkit-appearance: none;
         }
         input[type="password"]:focus, input[type="text"]:focus {
@@ -279,6 +288,7 @@
             justify-content: center;
             gap: 8px;
             margin-top: 24px;
+            min-width: 0;
         }
         .btn-submit:hover {
             transform: translateY(-1px);
