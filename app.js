@@ -429,151 +429,231 @@ setInterval(() => {
 }, 1000);
 
 
-// --- 6. INTEGRACIÓN REAL CON N8N ---
+// =======================================================================
+// --- 6. INTEGRACIÓN REAL CON N8N (VERSIÓN OPTIMIZADA) ---
+//
+// MEJORAS IMPLEMENTADAS:
+//  1. Caché en memoria: los datos se guardan y reutilizan durante la sesión.
+//  2. Promise deduplication: si dos navegaciones disparan la misma llamada
+//     simultáneamente, solo se hace UNA petición real.
+//  3. Precarga silenciosa: al arrancar la app ya se empieza a buscar datos.
+//  4. Skeleton loaders inmediatos: el UI responde al instante.
+//  5. Renderizado incremental del dashboard con datos cacheados primero.
+// =======================================================================
 
 const REAL_API_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/api-portal';
 
-// 1. Cargar datos del Dashboard desde Excel (OneDrive) vía n8n
+// ── Capa de Caché ─────────────────────────────────────────────────────────────
+const Cache = {
+    _data: null,               // datos en memoria
+    _fetchPromise: null,       // promesa en vuelo (evita peticiones duplicadas)
+    _timestamp: null,
+    TTL_MS: 5 * 60 * 1000,    // 5 minutos de vida útil
+
+    isValid() {
+        return this._data && this._timestamp && (Date.now() - this._timestamp < this.TTL_MS);
+    },
+
+    // Devuelve siempre una Promise. Si hay una petición en vuelo, reutiliza la misma.
+    async fetch() {
+        if (this.isValid()) return this._data;            // 1. Caché caliente
+        if (this._fetchPromise) return this._fetchPromise; // 2. Petición en vuelo
+
+        this._fetchPromise = fetch(REAL_API_URL)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                this._data = data;
+                this._timestamp = Date.now();
+                return data;
+            })
+            .finally(() => {
+                this._fetchPromise = null; // liberar para la próxima vez
+            });
+
+        return this._fetchPromise;
+    },
+
+    // Invalida el caché manualmente (útil tras subir una factura)
+    invalidate() {
+        this._data = null;
+        this._timestamp = null;
+    }
+};
+
+// ── Utilidades de renderizado ──────────────────────────────────────────────────
+
+// Skeleton loader para la tabla de facturas
+function renderTableSkeleton(tbody) {
+    const rows = Array.from({ length: 5 }, () => `
+        <tr class="border-b border-outline-variant/10">
+            ${['w-20', 'w-32', 'w-24', 'w-16', 'w-16'].map(w => `
+                <td class="px-6 py-4">
+                    <div class="h-4 ${w} bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                </td>`).join('')}
+        </tr>`).join('');
+    tbody.innerHTML = rows;
+}
+
+// Skeleton loader para el dashboard
+function renderDashboardSkeleton() {
+    ['dash-procesadas', 'dash-pendientes', 'dash-volumen'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '<div class="h-12 w-24 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse"></div>';
+    });
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────────────
 async function loadRealDashboardData() {
     const elProcesadas = document.getElementById('dash-procesadas');
     const elPendientes = document.getElementById('dash-pendientes');
-    const elVolumen = document.getElementById('dash-volumen');
-    const elMesActual = document.getElementById('dash-mes-actual');
+    const elVolumen    = document.getElementById('dash-volumen');
+    const elMesActual  = document.getElementById('dash-mes-actual');
+    if (!elProcesadas) return;
 
-    if (!elProcesadas || !elPendientes || !elVolumen || !elMesActual) return;
+    // Fecha dinámica (no depende de la API, se muestra al instante)
+    if (elMesActual) {
+        const fecha = new Date();
+        const nombreMes = fecha.toLocaleString('es-ES', { month: 'long' });
+        elMesActual.textContent = `${nombreMes.charAt(0).toUpperCase()}${nombreMes.slice(1)} ${fecha.getFullYear()}`;
+    }
 
-    // --- 1. Formatear Fecha Dinámica ---
-    const fecha = new Date();
-    const nombreMes = fecha.toLocaleString('es-ES', { month: 'long' });
-    const anio = fecha.getFullYear();
-    // Capitalizamos la primera letra (ej: "abril" -> "Abril")
-    const mesCapitalizado = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
-    
-    // Actualizamos el texto en el HTML
-    elMesActual.textContent = `${mesCapitalizado} ${anio}`;
+    // Si ya hay datos válidos en caché, pintamos inmediatamente (0 ms de espera)
+    if (Cache.isValid()) {
+        renderDashboardStats(Cache._data, elProcesadas, elPendientes, elVolumen);
+        return;
+    }
 
-    // --- Mostrar estado de carga (animación de parpadeo) ---
-    const loadingHtml = '<span class="text-3xl text-slate-400 animate-pulse">...</span>';
-    elProcesadas.innerHTML = loadingHtml;
-    elPendientes.innerHTML = loadingHtml;
-    elVolumen.innerHTML = loadingHtml;
+    // Sin caché: mostramos skeleton y pedimos datos
+    renderDashboardSkeleton();
 
     try {
-        const response = await fetch(REAL_API_URL);
-        if (!response.ok) throw new Error('Error al conectar con n8n');
-        
-        const invoices = await response.json();
-        
-        // --- Variables matemáticas ---
-        let totalProcesadas = 0;
-        let totalPendientes = 0;
-        let volumenTotal = 0;
-
-        // --- Calcular estadísticas ---
-        invoices.forEach(inv => {
-            if (inv.status === 'PROCESADO') {
-                totalProcesadas++;
-            } else {
-                totalPendientes++;
-            }
-
-            // Convertir el importe a número seguro (reemplaza comas por puntos si las hay en el Excel)
-            let importe = parseFloat(String(inv.amount).replace(',', '.')) || 0;
-            volumenTotal += importe;
-        });
-
-        // Dar formato de moneda europea (ej. 1.250,00 €)
-        const formatoMoneda = new Intl.NumberFormat('es-ES', { 
-            style: 'currency', 
-            currency: 'EUR',
-            maximumFractionDigits: 0 // Quitar decimales para que se vea más limpio como "$42k"
-        }).format(volumenTotal);
-
-        // --- Inyectar los resultados en el HTML ---
-        elProcesadas.textContent = totalProcesadas;
-        elPendientes.textContent = totalPendientes;
-        elVolumen.textContent = formatoMoneda;
-
+        const invoices = await Cache.fetch();
+        renderDashboardStats(invoices, elProcesadas, elPendientes, elVolumen);
     } catch (error) {
         console.error('Error cargando Dashboard:', error);
-        elProcesadas.innerHTML = '<span class="text-xl text-red-500">Error</span>';
-        elPendientes.innerHTML = '<span class="text-xl text-red-500">Error</span>';
-        elVolumen.innerHTML = '<span class="text-xl text-red-500">Error</span>';
+        [elProcesadas, elPendientes, elVolumen].forEach(el => {
+            if (el) el.innerHTML = '<span class="text-base text-red-500">Error</span>';
+        });
     }
 }
 
-// 2. Cargar lista de facturas desde Excel (OneDrive) vía n8n
-// 2. Cargar lista de facturas desde Excel (OneDrive) vía n8n
+function renderDashboardStats(invoices, elProcesadas, elPendientes, elVolumen) {
+    let totalProcesadas = 0, totalPendientes = 0, volumenTotal = 0;
+
+    invoices.forEach(inv => {
+        if (inv.status === 'PROCESADO') totalProcesadas++;
+        else totalPendientes++;
+        volumenTotal += parseFloat(String(inv.amount).replace(',', '.')) || 0;
+    });
+
+    const formatoMoneda = new Intl.NumberFormat('es-ES', {
+        style: 'currency',
+        currency: 'EUR',
+        maximumFractionDigits: 0
+    }).format(volumenTotal);
+
+    elProcesadas.textContent = totalProcesadas;
+    elPendientes.textContent = totalPendientes;
+    elVolumen.textContent    = formatoMoneda;
+}
+
+// ── Tabla de Facturas ──────────────────────────────────────────────────────────
 async function loadRealInvoicesTable() {
     const tbody = document.querySelector('#invoices-section tbody');
     if (!tbody) return;
 
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="5" class="px-6 py-10 text-center">
-                <div class="flex flex-col items-center justify-center">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
-                    <p class="text-xs font-medium text-on-surface-variant">Cargando facturas desde Excel...</p>
-                </div>
-            </td>
-        </tr>
-    `;
+    // Si hay caché, pintamos la tabla directamente sin ningún loader
+    if (Cache.isValid()) {
+        renderInvoiceRows(Cache._data, tbody);
+        return;
+    }
+
+    // Sin caché: skeleton inmediato
+    renderTableSkeleton(tbody);
 
     try {
-        const response = await fetch(REAL_API_URL);
-        if (!response.ok) throw new Error('Error al conectar con n8n');
-        
-        const invoices = await response.json();
-        tbody.innerHTML = ''; 
-
-        if (invoices.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-on-surface-variant">No hay facturas disponibles.</td></tr>';
-            return;
-        }
-
-        invoices.forEach(inv => {
-            // --- AQUÍ LA MAGIA: Convertimos la fecha de Excel a algo legible ---
-            const fechaFormateada = excelToJSDate(inv.date);
-
-            const row = `
-                <tr class="hover:bg-primary-fixed/30 dark:hover:bg-white/5 cursor-pointer transition-colors border-b border-outline-variant/10" onclick="previewInvoice('${inv.id}')">
-                    <td class="px-6 py-4 font-bold text-primary dark:text-[#bfc2ff]">${inv.id}</td>
-                    <td class="px-6 py-4 text-on-surface dark:text-white font-medium">${inv.client}</td>
-                    <td class="px-6 py-4 text-sm text-on-surface-variant dark:text-slate-400">${fechaFormateada}</td>
-                    <td class="px-6 py-4 font-bold dark:text-white">$${inv.amount}</td>
-                    <td class="px-6 py-4">
-                        <span class="px-3 py-1 ${inv.status === 'PROCESADO' ? 'bg-green-100 dark:bg-green-900/40 text-green-700' : 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700'} rounded-full text-[10px] font-bold uppercase tracking-wider">
-                            ${inv.status}
-                        </span>
-                    </td>
-                </tr>
-            `;
-            tbody.innerHTML += row;
-        });
+        const invoices = await Cache.fetch();
+        renderInvoiceRows(invoices, tbody);
     } catch (error) {
         console.error('Error cargando tabla:', error);
-        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500 text-sm">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="px-6 py-6 text-center">
+                    <div class="flex flex-col items-center gap-2">
+                        <span class="material-symbols-outlined text-3xl text-red-400">cloud_off</span>
+                        <p class="text-sm text-red-500 font-medium">${error.message}</p>
+                        <button onclick="Cache.invalidate(); loadRealInvoicesTable()"
+                            class="mt-2 text-xs text-primary underline">
+                            Reintentar
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
     }
 }
-// 3. Previsualizar PDF desde OneDrive/Qdrant
+
+function renderInvoiceRows(invoices, tbody) {
+    if (!invoices.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-on-surface-variant text-sm">No hay facturas disponibles.</td></tr>';
+        return;
+    }
+
+    // Usamos un DocumentFragment para un solo reflow del DOM
+    const fragment = document.createDocumentFragment();
+
+    invoices.forEach(inv => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-primary-fixed/30 dark:hover:bg-white/5 cursor-pointer transition-colors border-b border-outline-variant/10';
+        tr.setAttribute('onclick', `previewInvoice('${inv.id}')`);
+
+        const fechaFormateada = excelToJSDate(inv.date);
+        const isProcessed = inv.status === 'PROCESADO';
+
+        tr.innerHTML = `
+            <td class="px-6 py-4 font-bold text-primary dark:text-[#bfc2ff]">${inv.id}</td>
+            <td class="px-6 py-4 text-on-surface dark:text-white font-medium">${inv.client}</td>
+            <td class="px-6 py-4 text-sm text-on-surface-variant dark:text-slate-400">${fechaFormateada}</td>
+            <td class="px-6 py-4 font-bold dark:text-white">${inv.amount} €</td>
+            <td class="px-6 py-4">
+                <span class="px-3 py-1 ${isProcessed
+                    ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400'
+                    : 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400'}
+                    rounded-full text-[10px] font-bold uppercase tracking-wider">
+                    ${inv.status}
+                </span>
+            </td>`;
+        fragment.appendChild(tr);
+    });
+
+    tbody.innerHTML = '';
+    tbody.appendChild(fragment); // Un único reflow
+}
+
+// ── Previsualización PDF ───────────────────────────────────────────────────────
 async function previewInvoice(invoiceId) {
     const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
     if (!previewContainer) return;
-    
-    previewContainer.innerHTML = `
-        <div class="flex flex-col items-center justify-center h-full">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-            <p class="text-xs">Cargando PDF...</p>
-        </div>
-    `;
-    
-    // Suponiendo que n8n devuelve el PDF binario (requeriría un nuevo flujo en n8n)
     const pdfUrl = `${REAL_API_URL}-preview?id=${invoiceId}`;
-    previewContainer.innerHTML = `
-        <iframe src="${pdfUrl}" class="w-full h-[500px] border-none rounded-lg" title="Factura ${invoiceId}"></iframe>
-    `;
+    previewContainer.innerHTML = `<iframe src="${pdfUrl}" class="w-full h-[500px] border-none rounded-lg" title="Factura ${invoiceId}"></iframe>`;
 }
 
+// ── Precarga silenciosa al arrancar ───────────────────────────────────────────
+// Lanzamos la petición en background sin bloquear el primer render.
+// Cuando el usuario navegue al dashboard o facturas, el caché ya estará listo.
+window.addEventListener('load', () => {
+    setTimeout(() => Cache.fetch().catch(() => {}), 300);
+});
+
+// ── Invalidar caché tras subir una factura (añadir al bloque de éxito del upload) ──
+// En el bloque de éxito del formulario de subida (sección 4), añade esta línea:
+//   Cache.invalidate();
+// Así la próxima visita al dashboard o facturas verá los datos frescos.
+
+// Exponemos Cache globalmente para que el botón "Reintentar" funcione
+window.Cache = Cache;
 
 // Initial Load
 handleRouting();
