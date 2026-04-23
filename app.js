@@ -540,6 +540,7 @@ async function loadRealDashboardData() {
     }
 }
 
+// CÓDIGO A REEMPLAZAR EN app.js:
 function renderDashboardStats(invoices, elProcesadas, elPendientes, elVolumen) {
     let totalProcesadas = 0, totalPendientes = 0, volumenTotal = 0;
 
@@ -558,6 +559,32 @@ function renderDashboardStats(invoices, elProcesadas, elPendientes, elVolumen) {
     elProcesadas.textContent = totalProcesadas;
     elPendientes.textContent = totalPendientes;
     elVolumen.textContent    = formatoMoneda;
+
+    // --- NUEVA LÓGICA PARA EL BADGE ---
+    const badgeProcesadas = document.getElementById('badge-procesadas');
+    const textProcesadas = document.getElementById('text-procesadas');
+    const iconProcesadas = document.getElementById('icon-procesadas');
+
+    if (badgeProcesadas && textProcesadas && iconProcesadas) {
+        const totalFacturas = totalProcesadas + totalPendientes;
+        
+        // Ejemplo de cálculo: Porcentaje de éxito (facturas procesadas vs totales)
+        // Puedes cambiar esta fórmula por crecimiento mensual si tu API te da fechas
+        const porcentaje = totalFacturas > 0 ? Math.round((totalProcesadas / totalFacturas) * 100) : 0;
+        
+        textProcesadas.textContent = `${porcentaje}%`;
+
+        // Cambiar colores dinámicamente según el resultado
+        if (porcentaje >= 50) {
+            // Estilos positivos (Verde)
+            badgeProcesadas.className = "flex items-center font-bold text-sm px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400";
+            iconProcesadas.textContent = "trending_up";
+        } else {
+            // Estilos de alerta/negativos (Rojo/Naranja)
+            badgeProcesadas.className = "flex items-center font-bold text-sm px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400";
+            iconProcesadas.textContent = "trending_down";
+        }
+    }
 }
 
 // ── Tabla de Facturas ──────────────────────────────────────────────────────────
