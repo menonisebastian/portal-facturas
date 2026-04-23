@@ -639,11 +639,13 @@ function renderInvoiceRows(invoices, tbody) {
         const fechaFormateada = excelToJSDate(inv.date);
         const isProcessed = inv.status === 'PROCESADO';
 
+        const divisa = inv.currency || inv.moneda || '€';
+
         tr.innerHTML = `
             <td class="px-6 py-4 font-bold text-primary dark:text-[#bfc2ff]">${inv.id}</td>
             <td class="px-6 py-4 text-on-surface dark:text-white font-medium">${inv.client}</td>
             <td class="px-6 py-4 text-sm text-on-surface-variant dark:text-slate-400">${fechaFormateada}</td>
-            <td class="px-6 py-4 font-bold dark:text-white">${inv.amount} €</td>
+            <td class="px-6 py-4 font-bold dark:text-white">${inv.amount} ${divisa}</td>
             <td class="px-6 py-4">
                 <span class="px-3 py-1 ${isProcessed
                     ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400'
