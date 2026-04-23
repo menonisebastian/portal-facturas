@@ -188,73 +188,115 @@ function handleRouting() {
 import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.es.js';
 
 function initChat(selectedTheme = 'light') {
-    // Clean up existing chat widget if it exists to avoid duplication
+    // 1. Limpiar widget existente
     const existingChat = document.querySelector('div#n8n-chat') || document.querySelector('.n8n-chat-widget');
     if (existingChat) {
         existingChat.remove();
     }
 
+    // 2. Crear el chat
     createChat({
         webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat',
         theme: selectedTheme,
-        showWelcomeScreen: false,
+        showWelcomeScreen: true,
         initialMessages: [
             '¡Hola! 👋 Soy tu asistente financiero.',
             '¿En qué puedo ayudarte hoy?'
         ],
         i18n: {
-            en: {
-                title: 'Asistente de Facturas',
-                subtitle: 'Consulta inteligente de tus documentos',
-                inputPlaceholder: 'Escribe tu duda...',
-                getStarted: 'Comenzar',
-            },
-            es: {
-                title: 'Asistente de Facturas',
-                subtitle: 'Consulta inteligente de tus documentos',
-                inputPlaceholder: 'Escribe tu duda...',
-                getStarted: 'Comenzar',
-            }
+            en: { title: 'Asistente de Facturas', subtitle: 'Consulta inteligente de tus documentos', inputPlaceholder: 'Escribe tu duda...', getStarted: 'Comenzar' },
+            es: { title: 'Asistente de Facturas', subtitle: 'Consulta inteligente de tus documentos', inputPlaceholder: 'Escribe tu duda...', getStarted: 'Comenzar' }
         },
         theme: {
             mode: selectedTheme,
             customCSS: selectedTheme === 'dark' ? `
-                .chat-body, .chat-layout, .chat-footer, .chat-messages-list { 
-                    background-color: #0f172a !important; 
-                    background: #0f172a !important;
-                }
+                .chat-body, .chat-layout, .chat-footer, .chat-messages-list { background-color: #0f172a !important; background: #0f172a !important; }
                 .chat-message.chat-message-from-bot { background-color: #1e293b !important; color: white !important; }
                 .chat-message.chat-message-from-user { background-color: #030086 !important; color: white !important; }
                 .chat-input { background-color: #0f172a !important; border-top: 1px solid #334155 !important; }
                 .chat-input textarea { background-color: #1e293b !important; color: white !important; border-color: #475569 !important; }
             ` : ''
         }
-        
     });
 
-    // Limpiar mensajes de error crudo de n8n
+    // 3. Lógica secundaria (Errores y Botones)
     setTimeout(() => {
         const chatContainer = document.getElementById('n8n-chat');
         if (!chatContainer) return;
 
+        // --- A: Observador para limpiar errores técnicos de n8n ---
         const observer = new MutationObserver(() => {
             chatContainer.querySelectorAll('.chat-message-from-bot').forEach(msg => {
-                // ... tu código actual de sanitización ...
+                if (msg.dataset.sanitized) return;
+                const text = msg.innerText || msg.textContent || '';
+                const esError = text.includes('Error in workflow') || text.includes('"message"') || text.startsWith('{') || text.startsWith('[');
+
                 if (esError) {
-                    msg.textContent = '⚠️ El asistente tiene un problema técnico temporal...';
+                    msg.textContent = '⚠️ El asistente tiene un problema técnico temporal. Por favor, inténtalo de nuevo en unos minutos.';
                 }
                 msg.dataset.sanitized = 'true';
             });
-
-            // ----------------------------------------------------
-            // AÑADE ESTA LÍNEA AQUÍ ADENTRO:
-            injectStarterPromptsIntoChat();
-            // ----------------------------------------------------
-
         });
-
         observer.observe(chatContainer, { childList: true, subtree: true });
-    }, 1500);// esperar a que el widget cargue
+
+        // --- B: Inyector de Starter Prompts (Seguro y aislado) ---
+        const promptInterval = setInterval(() => {
+            const messagesList = document.querySelector('.chat-messages-list') || document.querySelector('.chat-layout');
+            
+            // Si la lista de mensajes existe y aún no hemos inyectado los botones
+            if (messagesList && !document.getElementById('custom-starter-prompts')) {
+                const promptsContainer = document.createElement('div');
+                promptsContainer.id = 'custom-starter-prompts';
+                promptsContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px; padding: 10px 20px; margin-top: 5px; margin-bottom: 15px; align-items: flex-end; animation: fadeIn 0.5s ease;';
+
+                const prompts = [
+                    { label: '📊 Resumen de mes', message: 'Por favor, analízame las facturas de este mes y dame un resumen financiero.' },
+                    { label: '🔍 Buscar factura', message: 'Necesito que me ayudes a buscar una factura específica.' },
+                    { label: '💰 Gastos totales', message: '¿Cuáles han sido los gastos totales registrados hasta ahora?' }
+                ];
+
+                const isDark = selectedTheme === 'dark';
+
+                prompts.forEach(p => {
+                    const btn = document.createElement('button');
+                    btn.innerText = p.label;
+                    
+                    const bg = isDark ? 'rgba(191, 194, 255, 0.1)' : 'rgba(3, 0, 134, 0.05)';
+                    const color = isDark ? '#bfc2ff' : '#030086';
+                    const border = isDark ? 'rgba(191, 194, 255, 0.3)' : 'rgba(3, 0, 134, 0.2)';
+                    
+                    btn.style.cssText = `background: ${bg}; color: ${color}; border: 1px solid ${border}; padding: 8px 14px; border-radius: 16px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; max-width: 85%; text-align: left;`;
+                    
+                    btn.onmouseover = () => btn.style.background = isDark ? 'rgba(191, 194, 255, 0.2)' : 'rgba(3, 0, 134, 0.1)';
+                    btn.onmouseout = () => btn.style.background = bg;
+
+                    btn.onclick = () => {
+                        promptsContainer.style.opacity = '0';
+                        setTimeout(() => promptsContainer.style.display = 'none', 300);
+                        
+                        const chatInput = document.querySelector('.chat-input textarea');
+                        const sendBtn = document.querySelector('.chat-input-send-button');
+                        
+                        if (chatInput && sendBtn) {
+                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+                            nativeInputValueSetter.call(chatInput, p.message);
+                            chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            
+                            sendBtn.removeAttribute('disabled');
+                            sendBtn.style.opacity = "1";
+                            sendBtn.style.pointerEvents = "auto";
+                            sendBtn.click();
+                        }
+                    };
+                    promptsContainer.appendChild(btn);
+                });
+
+                messagesList.appendChild(promptsContainer);
+                clearInterval(promptInterval); // Limpiamos el intervalo una vez inyectados
+            }
+        }, 500); // Revisa cada medio segundo hasta que el chat se abra
+
+    }, 1500);
 }
 
 // Detectar preferencia de tema inicial
