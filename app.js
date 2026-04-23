@@ -124,6 +124,79 @@ function handleRouting() {
 
 // --- 3. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) ---
 
+function getOrCreateChatSessionId(chatId = null) {
+    let sessions = JSON.parse(localStorage.getItem('sp_chat_sessions')) || [];
+    if (chatId && sessions.includes(chatId)) {
+        localStorage.setItem('sp_current_chat_id', chatId);
+        return chatId;
+    }
+    let currentSession = localStorage.getItem('sp_current_chat_id');
+    if (!currentSession || !sessions.includes(currentSession)) {
+        currentSession = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+        sessions.push(currentSession);
+        localStorage.setItem('sp_chat_sessions', JSON.stringify(sessions));
+        localStorage.setItem('sp_current_chat_id', currentSession);
+    }
+    return currentSession;
+}
+
+function openChatWidget() {
+    setTimeout(() => {
+        const chatToggle = document.querySelector('.chat-window-toggle');
+        if (chatToggle) chatToggle.click();
+    }, 300);
+}
+
+function renderChatHistory() {
+    const listContainer = document.getElementById('assistant-chat-history');
+    if (!listContainer) return;
+    
+    let sessions = JSON.parse(localStorage.getItem('sp_chat_sessions')) || [];
+    let currentSession = localStorage.getItem('sp_current_chat_id');
+    
+    listContainer.innerHTML = ''; 
+    
+    if (sessions.length === 0) {
+        listContainer.innerHTML = '<li class="text-center py-8 text-sm text-on-surface-variant dark:text-slate-400">Aún no hay conversaciones registradas.</li>';
+        return;
+    }
+
+    [...sessions].reverse().forEach((session, reversedIndex) => {
+        const index = sessions.length - 1 - reversedIndex; 
+        const li = document.createElement('li');
+        const isActive = session === currentSession;
+        
+        li.className = `cursor-pointer p-4 rounded-xl border transition-all flex items-center justify-between group ${isActive ? 'bg-primary/5 border-primary/30 dark:bg-[#bfc2ff]/10 dark:border-[#bfc2ff]/30' : 'bg-surface-container-lowest dark:bg-slate-900 border-outline-variant/20 dark:border-slate-700 hover:border-primary/50 dark:hover:border-[#bfc2ff]/50'}`;
+        
+        const timestamp = parseInt(session.split('_')[1]);
+        const dateStr = isNaN(timestamp) ? 'Conversación' : new Date(timestamp).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
+
+        li.innerHTML = `
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center ${isActive ? 'bg-primary text-white dark:bg-[#bfc2ff] dark:text-primary' : 'bg-surface-container dark:bg-slate-800 text-primary dark:text-[#bfc2ff]'}">
+                    <span class="material-symbols-outlined text-[20px]">${isActive ? 'chat' : 'history'}</span>
+                </div>
+                <div>
+                    <p class="text-sm font-bold ${isActive ? 'text-primary dark:text-[#bfc2ff]' : 'text-on-surface dark:text-white'}">Conversación ${index + 1}</p>
+                    <p class="text-[11px] text-on-surface-variant dark:text-slate-400">${dateStr}</p>
+                </div>
+            </div>
+            <button class="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-primary dark:text-[#bfc2ff] hover:bg-primary/10 dark:hover:bg-white/10 rounded-lg" title="Abrir chat">
+                <span class="material-symbols-outlined">open_in_new</span>
+            </button>
+        `;
+        
+        li.onclick = () => {
+            localStorage.setItem('sp_current_chat_id', session);
+            const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            initChat(currentTheme); 
+            renderChatHistory(); 
+            openChatWidget(); 
+        };
+        listContainer.appendChild(li);
+    });
+}
+
 function initChat(selectedTheme = 'light') {
     // 1. Limpiar widget existente
     const existingChat = document.querySelector('div#n8n-chat') || document.querySelector('.n8n-chat-widget');
@@ -134,6 +207,7 @@ function initChat(selectedTheme = 'light') {
     // 2. Crear el chat
     createChat({
         webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat',
+        metadata: { sessionId: currentSessionId },
         theme: selectedTheme,
         showWelcomeScreen: false,
         initialMessages: [
@@ -626,6 +700,26 @@ function renderInvoiceRows(invoices, tbody) {
     tbody.innerHTML = '';
     tbody.appendChild(fragment); 
 }
+
+// --- LÓGICA DEL BOTÓN DE NUEVA CONSULTA ---
+document.getElementById('btn-new-chat-assistant')?.addEventListener('click', () => {
+    const newSession = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    let sessions = JSON.parse(localStorage.getItem('sp_chat_sessions')) || [];
+    sessions.push(newSession);
+    localStorage.setItem('sp_chat_sessions', JSON.stringify(sessions));
+    localStorage.setItem('sp_current_chat_id', newSession);
+    
+    const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    initChat(currentTheme);
+    renderChatHistory();
+    openChatWidget();
+});
+
+// Asegurarse de renderizar el historial cuando la app carga
+window.addEventListener('load', () => {
+    renderChatHistory(); // <-- AÑADIR ESTA LÍNEA en tu evento de carga existente
+    setTimeout(() => Cache.fetch().catch(() => {}), 300);
+});
 
 async function previewInvoice(invoiceId) {
     const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');

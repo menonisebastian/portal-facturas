@@ -310,37 +310,42 @@
 
         <!-- AI Assistant Section -->
         <section id="assistant-section" class="hidden flex flex-col h-full animate-in fade-in duration-500">
-            <div class="mb-10 text-center">
+            <div class="mb-8 text-center">
                 <div class="inline-flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 bg-primary/10 dark:bg-[#bfc2ff]/10 rounded-full mb-6">
                     <span class="material-symbols-outlined text-primary dark:text-[#bfc2ff] text-4xl lg:text-5xl" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
                 </div>
                 <h2 class="text-3xl lg:text-4xl font-headline font-extrabold text-on-surface dark:text-white tracking-tight text-center">Centro de Ayuda AI</h2>
                 <p class="text-on-surface-variant dark:text-slate-400 mt-4 mx-auto max-w-xl text-base lg:text-lg">
-                    Haz clic en el botón de chat abajo a la derecha para ayuda.
+                    Gestiona tus consultas. Elige una conversación anterior o inicia una nueva.
                 </p>
-                <div class="mt-8">
-                    <button class="px-8 py-3 lg:px-10 lg:py-4 bg-primary dark:bg-[#bfc2ff] text-white dark:text-primary font-bold rounded-xl shadow-xl hover:scale-105 transition-transform flex items-center gap-3 mx-auto" id="open-chat-btn">
-                        <span class="material-symbols-outlined">chat</span>
-                        <span>Abrir Chat</span>
-                    </button>
-                </div>
             </div>
             
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 max-w-4xl mx-auto w-full">
-                <div class="p-6 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 shadow-sm">
-                    <span class="material-symbols-outlined text-primary dark:text-[#bfc2ff] mb-4">query_stats</span>
-                    <h4 class="font-bold dark:text-white mb-2">Análisis de Gastos</h4>
-                    <p class="text-xs text-on-surface-variant dark:text-slate-400">Pregunta sobre tus gastos totales.</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto w-full">
+                <div class="lg:col-span-1 space-y-4">
+                    <button id="btn-new-chat-assistant" class="w-full px-6 py-4 bg-primary dark:bg-[#bfc2ff] text-white dark:text-primary font-bold rounded-xl shadow-xl hover:scale-[1.02] transition-transform flex items-center justify-center gap-3">
+                        <span class="material-symbols-outlined">add_comment</span>
+                        <span>Nueva Consulta</span>
+                    </button>
+                    
+                    <div class="p-6 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 shadow-sm hidden sm:block">
+                        <span class="material-symbols-outlined text-primary dark:text-[#bfc2ff] mb-4">info</span>
+                        <h4 class="font-bold dark:text-white mb-2">¿Cómo funciona?</h4>
+                        <p class="text-xs text-on-surface-variant dark:text-slate-400">
+                            Al hacer clic en una conversación antigua o crear una nueva, el chat se abrirá automáticamente en la esquina de la pantalla con todo tu contexto guardado.
+                        </p>
+                    </div>
                 </div>
-                <div class="p-6 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 shadow-sm">
-                    <span class="material-symbols-outlined text-primary dark:text-[#bfc2ff] mb-4">receipt_long</span>
-                    <h4 class="font-bold dark:text-white mb-2">Búsqueda</h4>
-                    <p class="text-xs text-on-surface-variant dark:text-slate-400">Encuentra facturas por nombre o importe.</p>
-                </div>
-                <div class="p-6 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 shadow-sm hidden sm:block">
-                    <span class="material-symbols-outlined text-primary dark:text-[#bfc2ff] mb-4">auto_awesome</span>
-                    <h4 class="font-bold dark:text-white mb-2">Sugerencias</h4>
-                    <p class="text-xs text-on-surface-variant dark:text-slate-400">Optimización de costes con IA.</p>
+
+                <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 shadow-sm p-6 flex flex-col">
+                    <div class="flex items-center justify-between mb-4 pb-4 border-b border-outline-variant/10 dark:border-slate-700">
+                        <h3 class="font-bold text-lg dark:text-white flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary dark:text-[#bfc2ff]">history</span>
+                            Historial de Conversaciones
+                        </h3>
+                    </div>
+                    
+                    <ul id="assistant-chat-history" class="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1 max-h-[400px]">
+                        </ul>
                 </div>
             </div>
         </section>
