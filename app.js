@@ -140,6 +140,20 @@ function initChat(selectedTheme = 'light') {
             '¡Hola! 👋 Soy tu asistente financiero.',
             '¿En qué puedo ayudarte hoy?'
         ],
+        starterPrompts: [
+        { 
+            label: 'Resumen de mes', 
+            message: 'Por favor, analízame las facturas de este mes y dame un resumen financiero.' 
+        },
+        { 
+            label: 'Buscar factura', 
+            message: 'Necesito que me ayudes a buscar una factura específica.' 
+        },
+        { 
+            label: 'Gastos totales', 
+            message: '¿Cuáles han sido los gastos totales registrados hasta ahora?' 
+        }
+    ],
         i18n: {
             en: {
                 title: 'Asistente de Facturas',
