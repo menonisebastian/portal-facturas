@@ -632,6 +632,8 @@ function renderInvoiceRows(invoices, tbody) {
     const fragment = document.createDocumentFragment();
 
     invoices.forEach(inv => {
+        console.log("Datos de la factura:", inv.id, inv);
+        
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-primary-fixed/30 dark:hover:bg-white/5 cursor-pointer transition-colors border-b border-outline-variant/10';
         tr.setAttribute('onclick', `previewInvoice('${inv.id}')`);
