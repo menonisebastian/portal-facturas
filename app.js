@@ -37,7 +37,35 @@ function toggleSidebar(forceClose = false) {
         sidebar.classList.toggle('active');
         overlay.classList.toggle('active');
     }
-}
+
+window.sendStarterPrompt = function(promptText) {
+    const chatToggle = document.querySelector('.chat-window-toggle');
+    const chatWindow = document.querySelector('.chat-window');
+    
+    // 1. Abrir la ventana de chat si está cerrada
+    if (chatToggle && (!chatWindow || chatWindow.classList.contains('hidden') || chatWindow.style.display === 'none')) {
+        chatToggle.click();
+    }
+    
+    // 2. Darle unos milisegundos para que el DOM del chat esté visible
+    setTimeout(() => {
+        const chatInput = document.querySelector('.chat-input textarea');
+        const sendBtn = document.querySelector('.chat-input-send-button');
+        
+        if (chatInput && sendBtn) {
+            // 3. Inyectar el texto forzando el evento nativo para que la librería detecte el cambio
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+            nativeInputValueSetter.call(chatInput, promptText);
+            chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+            
+            // 4. Habilitar el botón si estaba bloqueado y hacer clic
+            sendBtn.removeAttribute('disabled');
+            sendBtn.style.opacity = "1";
+            sendBtn.style.pointerEvents = "auto";
+            sendBtn.click();
+        }
+    }, 150);
+};
 
 if (burgerBtn) burgerBtn.addEventListener('click', () => toggleSidebar());
 if (overlay) overlay.addEventListener('click', () => toggleSidebar(true));
@@ -135,25 +163,11 @@ function initChat(selectedTheme = 'light') {
     createChat({
         webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat',
         theme: selectedTheme,
-        showWelcomeScreen: true,
+        showWelcomeScreen: false,
         initialMessages: [
             '¡Hola! 👋 Soy tu asistente financiero.',
             '¿En qué puedo ayudarte hoy?'
         ],
-        starterPrompts: [
-        { 
-            label: 'Resumen de mes', 
-            message: 'Por favor, analízame las facturas de este mes y dame un resumen financiero.' 
-        },
-        { 
-            label: 'Buscar factura', 
-            message: 'Necesito que me ayudes a buscar una factura específica.' 
-        },
-        { 
-            label: 'Gastos totales', 
-            message: '¿Cuáles han sido los gastos totales registrados hasta ahora?' 
-        }
-    ],
         i18n: {
             en: {
                 title: 'Asistente de Facturas',
