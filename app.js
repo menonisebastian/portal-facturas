@@ -38,35 +38,69 @@ function toggleSidebar(forceClose = false) {
         overlay.classList.toggle('active');
     }
 
-window.sendStarterPrompt = function(promptText) {
-    const chatToggle = document.querySelector('.chat-window-toggle');
-    const chatWindow = document.querySelector('.chat-window');
-    
-    // 1. Abrir la ventana de chat si está cerrada
-    if (chatToggle && (!chatWindow || chatWindow.classList.contains('hidden') || chatWindow.style.display === 'none')) {
-        chatToggle.click();
-    }
-    
-    // 2. Darle unos milisegundos para que el DOM del chat esté visible
-    setTimeout(() => {
-        const chatInput = document.querySelector('.chat-input textarea');
-        const sendBtn = document.querySelector('.chat-input-send-button');
-        
-        if (chatInput && sendBtn) {
-            // 3. Inyectar el texto forzando el evento nativo para que la librería detecte el cambio
-            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
-            nativeInputValueSetter.call(chatInput, promptText);
-            chatInput.dispatchEvent(new Event('input', { bubbles: true }));
-            
-            // 4. Habilitar el botón si estaba bloqueado y hacer clic
-            sendBtn.removeAttribute('disabled');
-            sendBtn.style.opacity = "1";
-            sendBtn.style.pointerEvents = "auto";
-            sendBtn.click();
-        }
-    }, 150);
-};
+function injectStarterPromptsIntoChat() {
+    // Buscar la lista de mensajes del chat de n8n
+    const messagesList = document.querySelector('.chat-messages-list') || document.querySelector('.chat-layout');
+    if (!messagesList) return;
 
+    // Si ya los inyectamos, no hacemos nada (para evitar duplicados)
+    if (document.getElementById('custom-starter-prompts')) return;
+
+    // Crear el contenedor de nuestros botones
+    const promptsContainer = document.createElement('div');
+    promptsContainer.id = 'custom-starter-prompts';
+    // Estilos para que parezcan "burbujas" de sugerencia del lado derecho
+    promptsContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px; padding: 10px 20px; margin-top: 5px; margin-bottom: 15px; align-items: flex-end; animation: fadeIn 0.5s ease;';
+
+    const prompts = [
+        { label: '📊 Resumen de mes', message: 'Por favor, analízame las facturas de este mes y dame un resumen financiero.' },
+        { label: '🔍 Buscar factura', message: 'Necesito que me ayudes a buscar una factura específica.' },
+        { label: '💰 Gastos totales', message: '¿Cuáles han sido los gastos totales registrados hasta ahora?' }
+    ];
+
+    const isDark = document.documentElement.classList.contains('dark');
+
+    prompts.forEach(p => {
+        const btn = document.createElement('button');
+        btn.innerText = p.label;
+        
+        // Estilizar los botones con tu paleta (Primary: #030086 / Dark: #bfc2ff)
+        const bg = isDark ? 'rgba(191, 194, 255, 0.1)' : 'rgba(3, 0, 134, 0.05)';
+        const color = isDark ? '#bfc2ff' : '#030086';
+        const border = isDark ? 'rgba(191, 194, 255, 0.3)' : 'rgba(3, 0, 134, 0.2)';
+        
+        btn.style.cssText = `background: ${bg}; color: ${color}; border: 1px solid ${border}; padding: 8px 14px; border-radius: 16px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; max-width: 85%; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);`;
+        
+        // Efecto Hover nativo
+        btn.onmouseover = () => btn.style.background = isDark ? 'rgba(191, 194, 255, 0.2)' : 'rgba(3, 0, 134, 0.1)';
+        btn.onmouseout = () => btn.style.background = bg;
+
+        btn.onclick = () => {
+            // 1. Desvanecer y ocultar los botones tras hacer clic (como la función nativa)
+            promptsContainer.style.opacity = '0';
+            setTimeout(() => promptsContainer.style.display = 'none', 300);
+            
+            // 2. Insertar el texto en el input real del chat
+            const chatInput = document.querySelector('.chat-input textarea');
+            const sendBtn = document.querySelector('.chat-input-send-button');
+            
+            if (chatInput && sendBtn) {
+                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+                nativeInputValueSetter.call(chatInput, p.message);
+                chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                // 3. Forzar el envío
+                sendBtn.removeAttribute('disabled');
+                sendBtn.style.opacity = "1";
+                sendBtn.style.pointerEvents = "auto";
+                sendBtn.click();
+            }
+        };
+        promptsContainer.appendChild(btn);
+    });
+
+    messagesList.appendChild(promptsContainer);
+}
 if (burgerBtn) burgerBtn.addEventListener('click', () => toggleSidebar());
 if (overlay) overlay.addEventListener('click', () => toggleSidebar(true));
 if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', () => toggleSidebar(true));
@@ -199,29 +233,28 @@ function initChat(selectedTheme = 'light') {
     });
 
     // Limpiar mensajes de error crudo de n8n
-setTimeout(() => {
-    const chatContainer = document.getElementById('n8n-chat');
-    if (!chatContainer) return;
+    setTimeout(() => {
+        const chatContainer = document.getElementById('n8n-chat');
+        if (!chatContainer) return;
 
-    const observer = new MutationObserver(() => {
-        chatContainer.querySelectorAll('.chat-message-from-bot').forEach(msg => {
-            if (msg.dataset.sanitized) return;
-            const text = msg.innerText || msg.textContent || '';
+        const observer = new MutationObserver(() => {
+            chatContainer.querySelectorAll('.chat-message-from-bot').forEach(msg => {
+                // ... tu código actual de sanitización ...
+                if (esError) {
+                    msg.textContent = '⚠️ El asistente tiene un problema técnico temporal...';
+                }
+                msg.dataset.sanitized = 'true';
+            });
 
-            const esError = text.includes('Error in workflow') 
-                || text.includes('"message"')
-                || text.startsWith('{')
-                || text.startsWith('[');
+            // ----------------------------------------------------
+            // AÑADE ESTA LÍNEA AQUÍ ADENTRO:
+            injectStarterPromptsIntoChat();
+            // ----------------------------------------------------
 
-            if (esError) {
-                msg.textContent = '⚠️ El asistente tiene un problema técnico temporal. Por favor, inténtalo de nuevo en unos minutos.';
-            }
-            msg.dataset.sanitized = 'true';
         });
-    });
 
-    observer.observe(chatContainer, { childList: true, subtree: true });
-}, 1500); // esperar a que el widget cargue
+        observer.observe(chatContainer, { childList: true, subtree: true });
+    }, 1500);// esperar a que el widget cargue
 }
 
 // Detectar preferencia de tema inicial
