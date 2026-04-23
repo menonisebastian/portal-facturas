@@ -124,6 +124,8 @@ function handleRouting() {
 
 // --- 3. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) ---
 
+// --- 3. LÓGICA DE SESIONES Y ASISTENTE (NUEVO) ---
+
 function getOrCreateChatSessionId(chatId = null) {
     let sessions = JSON.parse(localStorage.getItem('sp_chat_sessions')) || [];
     if (chatId && sessions.includes(chatId)) {
@@ -140,12 +142,34 @@ function getOrCreateChatSessionId(chatId = null) {
     return currentSession;
 }
 
-function openChatWidget() {
-    setTimeout(() => {
-        const chatToggle = document.querySelector('.chat-window-toggle');
-        if (chatToggle) chatToggle.click();
-    }, 300);
-}
+// NUEVA FUNCIÓN ROBUSTA: Atraviesa el Shadow DOM para forzar la apertura del chat
+window.openChatWidget = function() {
+    let attempts = 0;
+    const interval = setInterval(() => {
+        // Buscamos el contenedor principal de n8n
+        const host = document.querySelector('.n8n-chat-widget') || document.querySelector('div[id^="n8n-chat"]');
+        
+        if (host) {
+            let toggleBtn = null;
+            // Si tiene un Shadow DOM (DOM oculto), lo atravesamos
+            if (host.shadowRoot) {
+                toggleBtn = host.shadowRoot.querySelector('.chat-window-toggle') || host.shadowRoot.querySelector('button');
+            } else {
+                toggleBtn = document.querySelector('.chat-window-toggle');
+            }
+
+            // Si encontramos el botón, le hacemos click y detenemos la búsqueda
+            if (toggleBtn) {
+                toggleBtn.click();
+                clearInterval(interval);
+                return;
+            }
+        }
+        
+        attempts++;
+        if (attempts > 30) clearInterval(interval); // Nos rendimos a los 3 segundos
+    }, 100);
+};
 
 function renderChatHistory() {
     const listContainer = document.getElementById('assistant-chat-history');
@@ -191,125 +215,70 @@ function renderChatHistory() {
             const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
             initChat(currentTheme); 
             renderChatHistory(); 
-            openChatWidget(); 
+            window.openChatWidget(); // Llama a la función global
         };
         listContainer.appendChild(li);
     });
 }
 
-function initChat(selectedTheme = 'light') {
-    // 1. Limpiar widget existente
-    const existingChat = document.querySelector('div#n8n-chat') || document.querySelector('.n8n-chat-widget');
-    if (existingChat) {
-        existingChat.remove();
-    }
+document.getElementById('btn-new-chat-assistant')?.addEventListener('click', () => {
+    const newSession = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    let sessions = JSON.parse(localStorage.getItem('sp_chat_sessions')) || [];
+    sessions.push(newSession);
+    localStorage.setItem('sp_chat_sessions', JSON.stringify(sessions));
+    localStorage.setItem('sp_current_chat_id', newSession);
+    
+    const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    initChat(currentTheme);
+    renderChatHistory();
+    window.openChatWidget(); // Llama a la función global
+});
 
-    // 2. Crear el chat
+function initChat(selectedTheme = 'light') {
+    const existingChat = document.querySelector('.n8n-chat-widget') || document.querySelector('div[id^="n8n-chat"]');
+    if (existingChat) existingChat.remove();
+
+    const currentSessionId = getOrCreateChatSessionId();
+
     createChat({
         webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat',
-        metadata: { sessionId: currentSessionId },
+        sessionId: currentSessionId, // <-- CORRECCIÓN: Se pone en la raíz, no en "metadata"
         theme: selectedTheme,
         showWelcomeScreen: false,
-        initialMessages: [
-            '¡Hola! 👋 Soy tu asistente financiero.',
-            '¿En qué puedo ayudarte hoy?'
-        ],
+        initialMessages: ['¡Hola! 👋 Soy tu asistente financiero.', '¿En qué puedo ayudarte hoy?'],
         i18n: {
-            en: { title: 'Asistente de Facturas', subtitle: 'Consulta inteligente de tus documentos', inputPlaceholder: 'Escribe tu duda...', getStarted: 'Comenzar' },
-            es: { title: 'Asistente de Facturas', subtitle: 'Consulta inteligente de tus documentos', inputPlaceholder: 'Escribe tu duda...', getStarted: 'Comenzar' }
+            es: { title: 'Asistente de Facturas', subtitle: 'Consulta inteligente', inputPlaceholder: 'Escribe tu duda...' }
         },
         theme: {
             mode: selectedTheme,
             customCSS: selectedTheme === 'dark' ? `
-                .chat-body, .chat-layout, .chat-footer, .chat-messages-list { background-color: #0f172a !important; background: #0f172a !important; }
-                .chat-message.chat-message-from-bot { background-color: #1e293b !important; color: white !important; }
-                .chat-message.chat-message-from-user { background-color: #030086 !important; color: white !important; }
-                .chat-input { background-color: #0f172a !important; border-top: 1px solid #334155 !important; }
-                .chat-input textarea { background-color: #1e293b !important; color: white !important; border-color: #475569 !important; }
+                .chat-body, .chat-layout, .chat-footer, .chat-messages-list { background-color: #0f172a !important; }
+                .chat-message.chat-message-from-user { background-color: #030086 !important; }
             ` : ''
         }
     });
 
-    // 3. Lógica secundaria (Errores y Botones Inyectados)
+    // Sanitizador de errores adaptado al Shadow DOM
     setTimeout(() => {
-        const chatContainer = document.getElementById('n8n-chat');
+        const chatContainer = document.querySelector('.n8n-chat-widget') || document.querySelector('div[id^="n8n-chat"]');
         if (!chatContainer) return;
-
-        // --- A: Observador para limpiar errores técnicos de n8n ---
+        
+        const rootToObserve = chatContainer.shadowRoot ? chatContainer.shadowRoot : chatContainer;
+        
         const observer = new MutationObserver(() => {
-            chatContainer.querySelectorAll('.chat-message-from-bot').forEach(msg => {
+            rootToObserve.querySelectorAll('.chat-message-from-bot').forEach(msg => {
                 if (msg.dataset.sanitized) return;
-                const text = msg.innerText || msg.textContent || '';
-                const esError = text.includes('Error in workflow') || text.includes('"message"') || text.startsWith('{') || text.startsWith('[');
-
-                if (esError) {
-                    msg.textContent = '⚠️ El asistente tiene un problema técnico temporal. Por favor, inténtalo de nuevo en unos minutos.';
+                const text = msg.innerText || '';
+                if (text.includes('Error in workflow') || text.startsWith('{')) {
+                    msg.textContent = '⚠️ El asistente tiene un problema técnico temporal. Por favor, inténtalo de nuevo.';
                 }
                 msg.dataset.sanitized = 'true';
             });
         });
-        observer.observe(chatContainer, { childList: true, subtree: true });
-
-        // --- B: Inyector de Starter Prompts (Seguro y aislado) ---
-        const promptInterval = setInterval(() => {
-            const messagesList = document.querySelector('.chat-messages-list');
-            
-            if (messagesList && !document.getElementById('custom-starter-prompts')) {
-                const promptsContainer = document.createElement('div');
-                promptsContainer.id = 'custom-starter-prompts';
-                promptsContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px; padding: 10px 20px; margin-top: 5px; margin-bottom: 15px; align-items: flex-end; animation: fadeIn 0.5s ease;';
-
-                const prompts = [
-                    { label: '📊 Resumen de mes', message: 'Por favor, analízame las facturas de este mes y dame un resumen financiero.' },
-                    { label: '🔍 Buscar factura', message: 'Necesito que me ayudes a buscar una factura específica.' },
-                    { label: '💰 Gastos totales', message: '¿Cuáles han sido los gastos totales registrados hasta ahora?' }
-                ];
-
-                const isDark = selectedTheme === 'dark';
-
-                prompts.forEach(p => {
-                    const btn = document.createElement('button');
-                    btn.innerText = p.label;
-                    
-                    const bg = isDark ? 'rgba(191, 194, 255, 0.1)' : 'rgba(3, 0, 134, 0.05)';
-                    const color = isDark ? '#bfc2ff' : '#030086';
-                    const border = isDark ? 'rgba(191, 194, 255, 0.3)' : 'rgba(3, 0, 134, 0.2)';
-                    
-                    btn.style.cssText = `background: ${bg}; color: ${color}; border: 1px solid ${border}; padding: 8px 14px; border-radius: 16px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; max-width: 85%; text-align: left;`;
-                    
-                    btn.onmouseover = () => btn.style.background = isDark ? 'rgba(191, 194, 255, 0.2)' : 'rgba(3, 0, 134, 0.1)';
-                    btn.onmouseout = () => btn.style.background = bg;
-
-                    btn.onclick = () => {
-                        promptsContainer.style.opacity = '0';
-                        setTimeout(() => promptsContainer.style.display = 'none', 300);
-                        
-                        const chatInput = document.querySelector('.chat-input textarea');
-                        const sendBtn = document.querySelector('.chat-input-send-button');
-                        
-                        if (chatInput && sendBtn) {
-                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
-                            nativeInputValueSetter.call(chatInput, p.message);
-                            chatInput.dispatchEvent(new Event('input', { bubbles: true }));
-                            
-                            sendBtn.removeAttribute('disabled');
-                            sendBtn.style.opacity = "1";
-                            sendBtn.style.pointerEvents = "auto";
-                            sendBtn.click();
-                        }
-                    };
-                    promptsContainer.appendChild(btn);
-                });
-
-                messagesList.appendChild(promptsContainer);
-                clearInterval(promptInterval); 
-            }
-        }, 500); 
-
+        observer.observe(rootToObserve, { childList: true, subtree: true });
     }, 1500);
 }
 
-// Detectar preferencia de tema inicial
 const initialTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 initChat(initialTheme);
 
