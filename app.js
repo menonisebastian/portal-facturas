@@ -3,7 +3,6 @@ import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.e
 
 // --- 2. CONFIGURACIÓN Y NAVEGACIÓN SPA ---
 
-// Si el guard ya está redirigiendo, no ejecutar nada de app.js
 if (!sessionStorage.getItem('sp_portal_auth')) {
     throw new Error("Acceso no autorizado: Deteniendo ejecución de app.js");
 }
@@ -19,18 +18,17 @@ const logoutBtn = document.getElementById('logout-btn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        e.stopPropagation(); // CRITICO: Evita que el evento "suba" al router
+        e.stopPropagation();
         if (typeof window.spLogout === 'function') {
-            window.spLogout(); // Usamos la función oficial del guard
+            window.spLogout();
         }
     });
 }
 
-// Función para convertir números de Excel (Serial Dates) a fecha legible
 function excelToJSDate(serial) {
-    if (!serial || isNaN(serial)) return serial; // Si ya es texto, lo deja igual
+    if (!serial || isNaN(serial)) return serial;
     const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
-    return date.toLocaleDateString('es-ES'); // Formato DD/MM/YYYY
+    return date.toLocaleDateString('es-ES');
 }
 
 function toggleSidebar(forceClose = false) {
@@ -48,27 +46,20 @@ if (burgerBtn) burgerBtn.addEventListener('click', () => toggleSidebar());
 if (overlay) overlay.addEventListener('click', () => toggleSidebar(true));
 if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', () => toggleSidebar(true));
 
-// Añadir listener al botón de abrir chat del HTML
 document.getElementById('open-chat-btn')?.addEventListener('click', () => {
     const chatToggle = document.querySelector('.chat-window-toggle');
     if (chatToggle) chatToggle.click();
 });
 
 function showSection(sectionId, updateHistory = true) {
-    // 1. Mostrar/ocultar secciones
     sections.forEach(id => {
         const section = document.getElementById(`${id}-section`);
-        if (section) {
-            section.classList.toggle('hidden', id !== sectionId);
-        }
+        if (section) section.classList.toggle('hidden', id !== sectionId);
     });
 
-    // 2. Update active nav item
     navItems.forEach(item => {
         const isActive = item.getAttribute('data-section') === sectionId;
         item.classList.toggle('active', isActive);
-        
-        // Tailwind classes for active/inactive
         if (isActive) {
             item.classList.add('text-[#1111bb]', 'dark:text-[#bfc2ff]', 'bg-white/50', 'dark:bg-white/10', 'border-l-4', 'border-[#1111bb]', 'rounded-xl');
             item.classList.remove('text-[#454555]', 'dark:text-slate-400');
@@ -78,41 +69,27 @@ function showSection(sectionId, updateHistory = true) {
         }
     });
 
-    // 3. Close sidebar on mobile after selection
-    if (window.innerWidth < 1024) {
-        toggleSidebar(true);
-    }
+    if (window.innerWidth < 1024) toggleSidebar(true);
 
-    // 4. Update URL without page reload
     if (updateHistory) {
         const path = sectionId === 'dashboard' ? '/' : `/${sectionId}`;
         window.history.pushState({ sectionId }, '', path);
     }
 
-    // 5. Cargar los datos reales
-    if (sectionId === 'invoices') {
-        loadRealInvoicesTable();
-    } else if (sectionId === 'dashboard') {
-        loadRealDashboardData();
-    }
+    if (sectionId === 'invoices') loadRealInvoicesTable();
+    else if (sectionId === 'dashboard') loadRealDashboardData();
 }
 
-// Event Listeners for Navigation
 navItems.forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
-        const section = item.getAttribute('data-section');
-        showSection(section);
+        showSection(item.getAttribute('data-section'));
     });
 });
 
-// Handle browser back/forward buttons
 window.addEventListener('popstate', (e) => {
-    if (e.state && e.state.sectionId) {
-        showSection(e.state.sectionId, false);
-    } else {
-        handleRouting();
-    }
+    if (e.state && e.state.sectionId) showSection(e.state.sectionId, false);
+    else handleRouting();
 });
 
 function handleRouting() {
@@ -122,9 +99,7 @@ function handleRouting() {
 }
 
 
-// --- 3. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) ---
-
-// --- 3. LÓGICA DE SESIONES Y ASISTENTE (NUEVO) ---
+// --- 3. LÓGICA DE SESIONES Y ASISTENTE ---
 
 function getOrCreateChatSessionId(chatId = null) {
     let sessions = JSON.parse(localStorage.getItem('sp_chat_sessions')) || [];
@@ -142,58 +117,53 @@ function getOrCreateChatSessionId(chatId = null) {
     return currentSession;
 }
 
-// NUEVA FUNCIÓN ROBUSTA: Atraviesa el Shadow DOM para forzar la apertura del chat
-window.openChatWidget = function() {
+window.openChatWidget = function () {
     let attempts = 0;
     const interval = setInterval(() => {
-        // Buscamos el contenedor principal de n8n
         const host = document.querySelector('.n8n-chat-widget') || document.querySelector('div[id^="n8n-chat"]');
-        
         if (host) {
-            let toggleBtn = null;
-            // Si tiene un Shadow DOM (DOM oculto), lo atravesamos
-            if (host.shadowRoot) {
-                toggleBtn = host.shadowRoot.querySelector('.chat-window-toggle') || host.shadowRoot.querySelector('button');
-            } else {
-                toggleBtn = document.querySelector('.chat-window-toggle');
-            }
-
-            // Si encontramos el botón, le hacemos click y detenemos la búsqueda
+            let toggleBtn = host.shadowRoot
+                ? host.shadowRoot.querySelector('.chat-window-toggle') || host.shadowRoot.querySelector('button')
+                : document.querySelector('.chat-window-toggle');
             if (toggleBtn) {
                 toggleBtn.click();
                 clearInterval(interval);
                 return;
             }
         }
-        
-        attempts++;
-        if (attempts > 30) clearInterval(interval); // Nos rendimos a los 3 segundos
+        if (++attempts > 30) clearInterval(interval);
     }, 100);
 };
 
 function renderChatHistory() {
     const listContainer = document.getElementById('assistant-chat-history');
     if (!listContainer) return;
-    
-    let sessions = JSON.parse(localStorage.getItem('sp_chat_sessions')) || [];
-    let currentSession = localStorage.getItem('sp_current_chat_id');
-    
-    listContainer.innerHTML = ''; 
-    
+
+    const sessions = JSON.parse(localStorage.getItem('sp_chat_sessions')) || [];
+    const currentSession = localStorage.getItem('sp_current_chat_id');
+
+    listContainer.innerHTML = '';
+
     if (sessions.length === 0) {
         listContainer.innerHTML = '<li class="text-center py-8 text-sm text-on-surface-variant dark:text-slate-400">Aún no hay conversaciones registradas.</li>';
         return;
     }
 
     [...sessions].reverse().forEach((session, reversedIndex) => {
-        const index = sessions.length - 1 - reversedIndex; 
+        const index = sessions.length - 1 - reversedIndex;
         const li = document.createElement('li');
         const isActive = session === currentSession;
-        
-        li.className = `cursor-pointer p-4 rounded-xl border transition-all flex items-center justify-between group ${isActive ? 'bg-primary/5 border-primary/30 dark:bg-[#bfc2ff]/10 dark:border-[#bfc2ff]/30' : 'bg-surface-container-lowest dark:bg-slate-900 border-outline-variant/20 dark:border-slate-700 hover:border-primary/50 dark:hover:border-[#bfc2ff]/50'}`;
-        
+
+        li.className = `cursor-pointer p-4 rounded-xl border transition-all flex items-center justify-between group ${
+            isActive
+                ? 'bg-primary/5 border-primary/30 dark:bg-[#bfc2ff]/10 dark:border-[#bfc2ff]/30'
+                : 'bg-surface-container-lowest dark:bg-slate-900 border-outline-variant/20 dark:border-slate-700 hover:border-primary/50 dark:hover:border-[#bfc2ff]/50'
+        }`;
+
         const timestamp = parseInt(session.split('_')[1]);
-        const dateStr = isNaN(timestamp) ? 'Conversación' : new Date(timestamp).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
+        const dateStr = isNaN(timestamp)
+            ? 'Conversación'
+            : new Date(timestamp).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
         li.innerHTML = `
             <div class="flex items-center gap-4">
@@ -207,64 +177,73 @@ function renderChatHistory() {
             </div>
             <button class="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-primary dark:text-[#bfc2ff] hover:bg-primary/10 dark:hover:bg-white/10 rounded-lg" title="Abrir chat">
                 <span class="material-symbols-outlined">open_in_new</span>
-            </button>
-        `;
-        
+            </button>`;
+
         li.onclick = () => {
             localStorage.setItem('sp_current_chat_id', session);
             const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-            initChat(currentTheme); 
-            renderChatHistory(); 
-            window.openChatWidget(); // Llama a la función global
+            initChat(currentTheme);
+            renderChatHistory();
+            window.openChatWidget();
         };
         listContainer.appendChild(li);
     });
 }
 
+// ─── ÚNICO listener para "Nueva Consulta" ────────────────────────────────────
 document.getElementById('btn-new-chat-assistant')?.addEventListener('click', () => {
     const newSession = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-    let sessions = JSON.parse(localStorage.getItem('sp_chat_sessions')) || [];
+    const sessions = JSON.parse(localStorage.getItem('sp_chat_sessions')) || [];
     sessions.push(newSession);
     localStorage.setItem('sp_chat_sessions', JSON.stringify(sessions));
     localStorage.setItem('sp_current_chat_id', newSession);
-    
+
     const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     initChat(currentTheme);
     renderChatHistory();
-    window.openChatWidget(); // Llama a la función global
+    window.openChatWidget();
 });
 
 function initChat(selectedTheme = 'light') {
+    // Destruir instancia anterior
     const existingChat = document.querySelector('.n8n-chat-widget') || document.querySelector('div[id^="n8n-chat"]');
     if (existingChat) existingChat.remove();
 
     const currentSessionId = getOrCreateChatSessionId();
 
+    // FIX: "theme" declarado UNA sola vez y sin duplicar la clave
     createChat({
         webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat',
-        sessionId: currentSessionId, // <-- CORRECCIÓN: Se pone en la raíz, no en "metadata"
-        theme: selectedTheme,
+        sessionId: currentSessionId,
+        mode: selectedTheme,
         showWelcomeScreen: false,
-        initialMessages: ['¡Hola! 👋 Soy tu asistente financiero.', '¿En qué puedo ayudarte hoy?'],
+        initialMessages: [
+            '¡Hola! 👋 Soy tu asistente financiero.',
+            '¿En qué puedo ayudarte hoy?'
+        ],
         i18n: {
-            es: { title: 'Asistente de Facturas', subtitle: 'Consulta inteligente', inputPlaceholder: 'Escribe tu duda...' }
+            es: {
+                title: 'Asistente de Facturas',
+                subtitle: 'Consulta inteligente',
+                inputPlaceholder: 'Escribe tu duda...',
+                getStarted: 'Nueva conversación',
+                footer: ''
+            }
         },
-        theme: {
-            mode: selectedTheme,
-            customCSS: selectedTheme === 'dark' ? `
+        defaultLanguage: 'es',
+        ...(selectedTheme === 'dark' && {
+            customCSS: `
                 .chat-body, .chat-layout, .chat-footer, .chat-messages-list { background-color: #0f172a !important; }
                 .chat-message.chat-message-from-user { background-color: #030086 !important; }
-            ` : ''
-        }
+            `
+        })
     });
 
-    // Sanitizador de errores adaptado al Shadow DOM
+    // Sanitizador de errores
     setTimeout(() => {
         const chatContainer = document.querySelector('.n8n-chat-widget') || document.querySelector('div[id^="n8n-chat"]');
         if (!chatContainer) return;
-        
         const rootToObserve = chatContainer.shadowRoot ? chatContainer.shadowRoot : chatContainer;
-        
         const observer = new MutationObserver(() => {
             rootToObserve.querySelectorAll('.chat-message-from-bot').forEach(msg => {
                 if (msg.dataset.sanitized) return;
@@ -279,11 +258,12 @@ function initChat(selectedTheme = 'light') {
     }, 1500);
 }
 
+// Inicializar al arrancar
 const initialTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 initChat(initialTheme);
 
 
-// --- 4. LÓGICA DEL MODO OSCURO ---
+// --- 4. MODO OSCURO ---
 const themeBtn = document.getElementById('theme-toggle');
 const themeIcon = document.getElementById('theme-icon');
 const themeText = document.getElementById('theme-text');
@@ -292,39 +272,32 @@ if (themeBtn) {
     themeBtn.addEventListener('click', () => {
         const isDark = document.documentElement.classList.toggle('dark');
         const newTheme = isDark ? 'dark' : 'light';
-        
-        // Actualizar UI del botón
         if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
         if (themeText) themeText.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
-        
-        // Reiniciar el chat con el nuevo tema visual
         initChat(newTheme);
     });
 }
 
 
-// --- 5. LÓGICA DEL FORMULARIO DE SUBIDA DE FACTURAS ---
+// --- 5. FORMULARIO DE SUBIDA ---
 const fileInput = document.getElementById('fileInput');
 const fileNameDisplay = document.getElementById('file-name');
 const fileInfoContainer = document.getElementById('file-info');
 
-// Mostrar nombre de archivo y VISTA PREVIA DEL PDF al seleccionar
 if (fileInput) {
     fileInput.addEventListener('change', () => {
         const file = fileInput.files[0];
         if (file) {
             fileNameDisplay.textContent = `Archivo seleccionado: ${file.name}`;
             fileInfoContainer.classList.remove('hidden');
-
             const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
             if (previewContainer) {
                 const fileURL = URL.createObjectURL(file);
                 previewContainer.innerHTML = `
                     <div class="absolute top-4 right-4 z-10 flex gap-2">
-                         <div class="px-3 py-1 bg-slate-800/90 backdrop-blur rounded-lg text-[10px] font-bold text-white uppercase tracking-widest">Documento Original</div>
+                        <div class="px-3 py-1 bg-slate-800/90 backdrop-blur rounded-lg text-[10px] font-bold text-white uppercase tracking-widest">Documento Original</div>
                     </div>
-                    <iframe src="${fileURL}#toolbar=0" class="w-full h-[500px] border-none rounded-lg shadow-inner" title="Vista previa local"></iframe>
-                `;
+                    <iframe src="${fileURL}#toolbar=0" class="w-full h-[500px] border-none rounded-lg shadow-inner" title="Vista previa local"></iframe>`;
             }
         } else {
             fileInfoContainer.classList.add('hidden');
@@ -335,8 +308,7 @@ if (fileInput) {
 const uploadForm = document.getElementById('uploadForm');
 if (uploadForm) {
     uploadForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); 
-        
+        e.preventDefault();
         const submitBtn = document.getElementById('submitBtn');
         const statusCard = document.getElementById('status-card');
         const statusTitle = document.getElementById('status-title');
@@ -346,18 +318,15 @@ if (uploadForm) {
         const statusIcon = document.getElementById('status-icon');
         const statusIconContainer = document.getElementById('status-icon-container');
         const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
-        
         const file = fileInput.files[0];
         if (!file) return;
 
         const N8N_WEBHOOK_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/subir-factura';
-
         const formData = new FormData();
         formData.append("attachment_0", file);
 
         submitBtn.disabled = true;
         submitBtn.querySelector('span').textContent = 'Enviando...';
-        
         statusCard.classList.remove('hidden');
         statusTitle.textContent = 'Procesando...';
         statusMessage.textContent = 'Enviando factura a la IA...';
@@ -365,33 +334,26 @@ if (uploadForm) {
         statusPercentage.textContent = '30%';
         statusIcon.textContent = 'sync';
         statusIcon.classList.add('animate-spin');
-        
+
         if (previewContainer) {
-             previewContainer.innerHTML = `
+            previewContainer.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-[500px] bg-white/50 dark:bg-slate-800/50 rounded-lg">
                     <span class="material-symbols-outlined text-6xl text-primary animate-pulse mb-4">document_scanner</span>
                     <p class="text-sm font-bold text-primary dark:text-[#bfc2ff] animate-pulse">IA Extrayendo datos...</p>
-                </div>
-            `;
+                </div>`;
         }
 
         try {
-            const response = await fetch(N8N_WEBHOOK_URL, {
-                method: 'POST',
-                body: formData
-            });
-
+            const response = await fetch(N8N_WEBHOOK_URL, { method: 'POST', body: formData });
             statusProgress.style.width = '70%';
             statusPercentage.textContent = '70%';
             statusMessage.textContent = 'Analizando metadatos del documento...';
-
             const result = await response.json();
 
             if (response.ok && result) {
                 if (result.exito === false || result.error || result.error_procesamiento) {
                     throw new Error(result.mensaje || result.error || result.error_procesamiento || 'El documento fue rechazado.');
                 }
-                
                 statusTitle.textContent = 'Completado';
                 statusMessage.textContent = result.mensaje || '¡Factura procesada con éxito!';
                 statusProgress.style.width = '100%';
@@ -401,7 +363,7 @@ if (uploadForm) {
                 statusIconContainer.classList.remove('bg-secondary-fixed', 'dark:bg-slate-700');
                 statusIconContainer.classList.add('bg-green-100', 'dark:bg-green-900/40');
                 statusIcon.classList.add('text-green-600', 'dark:text-green-400');
-                
+
                 if (previewContainer) {
                     const prov = result.PROVEEDOR || result.proveedor || "Proveedor";
                     const num = result.NUMERO || result.numero_factura || "S/N";
@@ -410,10 +372,9 @@ if (uploadForm) {
                     const iva = result.CUOTAIVA || result.cuota_iva || "0.00";
                     const total = result.TOTAL || result.total_factura || "0.00";
                     const moneda = result.MONEDA || result.moneda || "EUR";
-
                     previewContainer.innerHTML = `
                         <div class="absolute top-4 right-4 z-10 flex gap-2">
-                             <div class="px-3 py-1 bg-green-500/90 backdrop-blur rounded-lg text-[10px] font-bold text-white uppercase tracking-widest">Extracción Exitosa</div>
+                            <div class="px-3 py-1 bg-green-500/90 backdrop-blur rounded-lg text-[10px] font-bold text-white uppercase tracking-widest">Extracción Exitosa</div>
                         </div>
                         <div class="bg-white dark:bg-slate-800 rounded-lg p-6 w-full h-[500px] flex items-center justify-center border border-outline-variant/20 shadow-sm">
                             <div class="w-full max-w-sm bg-surface-container-lowest dark:bg-slate-900 p-8 rounded-xl shadow-2xl font-mono text-sm relative border border-outline-variant/10">
@@ -435,11 +396,9 @@ if (uploadForm) {
                                     <span>${total} ${moneda}</span>
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 }
-
-                fileInput.value = ''; 
+                fileInput.value = '';
                 fileInfoContainer.classList.add('hidden');
                 if (typeof Cache !== 'undefined') Cache.invalidate();
             } else {
@@ -455,14 +414,12 @@ if (uploadForm) {
             statusIcon.classList.add('text-red-600', 'dark:text-red-400');
             statusProgress.classList.remove('bg-primary', 'dark:bg-[#bfc2ff]');
             statusProgress.classList.add('bg-red-500');
-            
             if (previewContainer) {
                 previewContainer.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-[500px] bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800">
                         <span class="material-symbols-outlined text-6xl text-red-500 mb-4">warning</span>
                         <p class="text-sm font-bold text-red-700 dark:text-red-400">Error en la lectura del documento.</p>
-                    </div>
-                `;
+                    </div>`;
             }
         } finally {
             submitBtn.disabled = false;
@@ -471,7 +428,7 @@ if (uploadForm) {
     });
 }
 
-// --- FIX DE ACTIVACIÓN DEL BOTÓN DE ENVÍO DEL CHAT ---
+// Fix botón envío del chat
 setInterval(() => {
     const sendButton = document.querySelector('.chat-input-send-button');
     if (sendButton && sendButton.hasAttribute('disabled')) {
@@ -483,56 +440,34 @@ setInterval(() => {
 }, 1000);
 
 
-// --- 6. INTEGRACIÓN REAL CON N8N Y DASHBOARD ---
+// --- 6. DASHBOARD Y TABLA DE FACTURAS ---
 
 const REAL_API_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/api-portal';
 
 const Cache = {
-    _data: null,               
-    _fetchPromise: null,       
+    _data: null,
+    _fetchPromise: null,
     _timestamp: null,
-    TTL_MS: 5 * 60 * 1000,    
-
-    isValid() {
-        return this._data && this._timestamp && (Date.now() - this._timestamp < this.TTL_MS);
-    },
-
+    TTL_MS: 5 * 60 * 1000,
+    isValid() { return this._data && this._timestamp && (Date.now() - this._timestamp < this.TTL_MS); },
     async fetch() {
-        if (this.isValid()) return this._data;            
-        if (this._fetchPromise) return this._fetchPromise; 
-
+        if (this.isValid()) return this._data;
+        if (this._fetchPromise) return this._fetchPromise;
         this._fetchPromise = fetch(REAL_API_URL)
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.json();
-            })
-            .then(data => {
-                this._data = data;
-                this._timestamp = Date.now();
-                return data;
-            })
-            .finally(() => {
-                this._fetchPromise = null; 
-            });
-
+            .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
+            .then(data => { this._data = data; this._timestamp = Date.now(); return data; })
+            .finally(() => { this._fetchPromise = null; });
         return this._fetchPromise;
     },
-
-    invalidate() {
-        this._data = null;
-        this._timestamp = null;
-    }
+    invalidate() { this._data = null; this._timestamp = null; }
 };
 
 function renderTableSkeleton(tbody) {
-    const rows = Array.from({ length: 5 }, () => `
+    tbody.innerHTML = Array.from({ length: 5 }, () => `
         <tr class="border-b border-outline-variant/10">
             ${['w-20', 'w-32', 'w-24', 'w-16', 'w-16'].map(w => `
-                <td class="px-6 py-4">
-                    <div class="h-4 ${w} bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-                </td>`).join('')}
+                <td class="px-6 py-4"><div class="h-4 ${w} bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div></td>`).join('')}
         </tr>`).join('');
-    tbody.innerHTML = rows;
 }
 
 function renderDashboardSkeleton() {
@@ -555,48 +490,33 @@ async function loadRealDashboardData() {
         elMesActual.textContent = `${nombreMes.charAt(0).toUpperCase()}${nombreMes.slice(1)} ${fecha.getFullYear()}`;
     }
 
-    if (Cache.isValid()) {
-        renderDashboardStats(Cache._data, elProcesadas, elPendientes, elVolumen);
-        return;
-    }
-
+    if (Cache.isValid()) { renderDashboardStats(Cache._data, elProcesadas, elPendientes, elVolumen); return; }
     renderDashboardSkeleton();
-
     try {
-        const invoices = await Cache.fetch();
-        renderDashboardStats(invoices, elProcesadas, elPendientes, elVolumen);
+        renderDashboardStats(await Cache.fetch(), elProcesadas, elPendientes, elVolumen);
     } catch (error) {
         console.error('Error cargando Dashboard:', error);
-        [elProcesadas, elPendientes, elVolumen].forEach(el => {
-            if (el) el.innerHTML = '<span class="text-base text-red-500">Error</span>';
-        });
+        [elProcesadas, elPendientes, elVolumen].forEach(el => { if (el) el.innerHTML = '<span class="text-base text-red-500">Error</span>'; });
     }
 }
 
 function renderDashboardStats(invoices, elProcesadas, elPendientes, elVolumen) {
     let totalProcesadas = 0, totalPendientes = 0, volumenTotal = 0;
-
     invoices.forEach(inv => {
-        if (inv.status === 'PROCESADO') totalProcesadas++;
-        else totalPendientes++;
+        if (inv.status === 'PROCESADO') totalProcesadas++; else totalPendientes++;
         volumenTotal += parseFloat(String(inv.amount).replace(',', '.')) || 0;
     });
-
-    const formatoMoneda = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(volumenTotal);
-
     elProcesadas.textContent = totalProcesadas;
     elPendientes.textContent = totalPendientes;
-    elVolumen.textContent    = formatoMoneda;
+    elVolumen.textContent = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(volumenTotal);
 
     const badgeProcesadas = document.getElementById('badge-procesadas');
     const textProcesadas = document.getElementById('text-procesadas');
     const iconProcesadas = document.getElementById('icon-procesadas');
-
     if (badgeProcesadas && textProcesadas && iconProcesadas) {
-        const totalFacturas = totalProcesadas + totalPendientes;
-        const porcentaje = totalFacturas > 0 ? Math.round((totalProcesadas / totalFacturas) * 100) : 0;
+        const total = totalProcesadas + totalPendientes;
+        const porcentaje = total > 0 ? Math.round((totalProcesadas / total) * 100) : 0;
         textProcesadas.textContent = `${porcentaje}%`;
-
         if (porcentaje >= 50) {
             badgeProcesadas.className = "flex items-center font-bold text-sm px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400";
             iconProcesadas.textContent = "trending_up";
@@ -610,29 +530,20 @@ function renderDashboardStats(invoices, elProcesadas, elPendientes, elVolumen) {
 async function loadRealInvoicesTable() {
     const tbody = document.querySelector('#invoices-section tbody');
     if (!tbody) return;
-
-    if (Cache.isValid()) {
-        renderInvoiceRows(Cache._data, tbody);
-        return;
-    }
-
+    if (Cache.isValid()) { renderInvoiceRows(Cache._data, tbody); return; }
     renderTableSkeleton(tbody);
-
     try {
-        const invoices = await Cache.fetch();
-        renderInvoiceRows(invoices, tbody);
+        renderInvoiceRows(await Cache.fetch(), tbody);
     } catch (error) {
         console.error('Error cargando tabla:', error);
         tbody.innerHTML = `
-            <tr>
-                <td colspan="5" class="px-6 py-6 text-center">
-                    <div class="flex flex-col items-center gap-2">
-                        <span class="material-symbols-outlined text-3xl text-red-400">cloud_off</span>
-                        <p class="text-sm text-red-500 font-medium">${error.message}</p>
-                        <button onclick="Cache.invalidate(); loadRealInvoicesTable()" class="mt-2 text-xs text-primary underline">Reintentar</button>
-                    </div>
-                </td>
-            </tr>`;
+            <tr><td colspan="5" class="px-6 py-6 text-center">
+                <div class="flex flex-col items-center gap-2">
+                    <span class="material-symbols-outlined text-3xl text-red-400">cloud_off</span>
+                    <p class="text-sm text-red-500 font-medium">${error.message}</p>
+                    <button onclick="Cache.invalidate(); loadRealInvoicesTable()" class="mt-2 text-xs text-primary underline">Reintentar</button>
+                </div>
+            </td></tr>`;
     }
 }
 
@@ -641,22 +552,17 @@ function renderInvoiceRows(invoices, tbody) {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-on-surface-variant text-sm">No hay facturas disponibles.</td></tr>';
         return;
     }
-
     const fragment = document.createDocumentFragment();
-
     invoices.forEach(inv => {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-primary-fixed/30 dark:hover:bg-white/5 cursor-pointer transition-colors border-b border-outline-variant/10';
         tr.setAttribute('onclick', `previewInvoice('${inv.id}')`);
-
-        const fechaFormateada = excelToJSDate(inv.date);
         const isProcessed = inv.status === 'PROCESADO';
         const divisa = inv.currency || inv.moneda || '€';
-
         tr.innerHTML = `
             <td class="px-6 py-4 font-bold text-primary dark:text-[#bfc2ff]">${inv.id}</td>
             <td class="px-6 py-4 text-on-surface dark:text-white font-medium">${inv.client}</td>
-            <td class="px-6 py-4 text-sm text-on-surface-variant dark:text-slate-400">${fechaFormateada}</td>
+            <td class="px-6 py-4 text-sm text-on-surface-variant dark:text-slate-400">${excelToJSDate(inv.date)}</td>
             <td class="px-6 py-4 font-bold dark:text-white">${inv.amount} ${divisa}</td>
             <td class="px-6 py-4">
                 <span class="px-3 py-1 ${isProcessed ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400'} rounded-full text-[10px] font-bold uppercase tracking-wider">
@@ -665,41 +571,22 @@ function renderInvoiceRows(invoices, tbody) {
             </td>`;
         fragment.appendChild(tr);
     });
-
     tbody.innerHTML = '';
-    tbody.appendChild(fragment); 
+    tbody.appendChild(fragment);
 }
-
-// --- LÓGICA DEL BOTÓN DE NUEVA CONSULTA ---
-document.getElementById('btn-new-chat-assistant')?.addEventListener('click', () => {
-    const newSession = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-    let sessions = JSON.parse(localStorage.getItem('sp_chat_sessions')) || [];
-    sessions.push(newSession);
-    localStorage.setItem('sp_chat_sessions', JSON.stringify(sessions));
-    localStorage.setItem('sp_current_chat_id', newSession);
-    
-    const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-    initChat(currentTheme);
-    renderChatHistory();
-    openChatWidget();
-});
-
-// Asegurarse de renderizar el historial cuando la app carga
-window.addEventListener('load', () => {
-    renderChatHistory(); // <-- AÑADIR ESTA LÍNEA en tu evento de carga existente
-    setTimeout(() => Cache.fetch().catch(() => {}), 300);
-});
 
 async function previewInvoice(invoiceId) {
     const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
     if (!previewContainer) return;
-    const pdfUrl = `${REAL_API_URL}-preview?id=${invoiceId}`;
-    previewContainer.innerHTML = `<iframe src="${pdfUrl}" class="w-full h-[500px] border-none rounded-lg" title="Factura ${invoiceId}"></iframe>`;
+    previewContainer.innerHTML = `<iframe src="${REAL_API_URL}-preview?id=${invoiceId}" class="w-full h-[500px] border-none rounded-lg" title="Factura ${invoiceId}"></iframe>`;
 }
 
+// --- INICIALIZACIÓN FINAL ---
+window.Cache = Cache;
+
 window.addEventListener('load', () => {
+    renderChatHistory();
     setTimeout(() => Cache.fetch().catch(() => {}), 300);
 });
 
-window.Cache = Cache;
 handleRouting();
