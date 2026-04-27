@@ -131,10 +131,18 @@ function initChat(selectedTheme = 'light') {
         existingChat.remove();
     }
 
-    // 2. Crear el chat
+    // 2. Recuperar o crear sessionId persistente
+    let sessionId = localStorage.getItem('n8n_chat_sessionId');
+    if (!sessionId) {
+        sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
+        localStorage.setItem('n8n_chat_sessionId', sessionId);
+    }
+
+    // 3. Crear el chat
     createChat({
         webhookUrl: 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/a8d485bd-7592-47c6-8364-a483d80ddbc2/chat',
         theme: selectedTheme,
+        sessionId: sessionId,
         showWelcomeScreen: false,
         initialMessages: [
             '¡Hola! 👋 Soy tu asistente financiero.',
