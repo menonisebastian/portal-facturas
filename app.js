@@ -708,21 +708,46 @@ async function loadChatHistory() {
 }
 
 // Abrir una sesión anterior: cambia el sessionId y abre el chat
-function openSession(sessionId) {
-    localStorage.setItem('n8n_chat_sessionId', sessionId);
+async function openSession(sessionId) {
     const isDark = document.documentElement.classList.contains('dark');
     
-    // Destruir el chat actual completamente
+    // 1. Obtener mensajes de la sesión
+    const res = await fetch(`${HISTORIAL_API_URL}?session_id=${sessionId}`);
+    const mensajes = await res.json();
+    
+    // 2. Cargar el chat con ese sessionId
+    localStorage.setItem('n8n_chat_sessionId', sessionId);
+    
     const existingChat = document.querySelector('div#n8n-chat');
     if (existingChat) existingChat.remove();
     
-    // Esperar más tiempo antes de reiniciar
     setTimeout(() => {
         initChat(isDark ? 'dark' : 'light');
-        // Abrir el chat después de que se inicialice
+        
+        // 3. Inyectar los mensajes anteriores en el chat
         setTimeout(() => {
             const toggle = document.querySelector('.chat-window-toggle');
             if (toggle) toggle.click();
+            
+            setTimeout(() => {
+                const messagesList = document.querySelector('.chat-messages-list');
+                if (!messagesList || !mensajes.length) return;
+                
+                // Limpiar mensajes iniciales
+                messagesList.innerHTML = '';
+                
+                mensajes.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = m.type === 'human' 
+                        ? 'chat-message chat-message-from-user' 
+                        : 'chat-message chat-message-from-bot';
+                    div.textContent = m.content;
+                    messagesList.appendChild(div);
+                });
+                
+                // Scroll al final
+                messagesList.scrollTop = messagesList.scrollHeight;
+            }, 800);
         }, 800);
     }, 300);
 }
