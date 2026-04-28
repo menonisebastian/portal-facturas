@@ -126,7 +126,7 @@ function handleRouting() {
 
 // --- 3. INICIALIZACIÓN DEL ASISTENTE INTELIGENTE (RAG) ---
 
-function initChat(selectedTheme = 'light') {
+function initChat(selectedTheme = 'light', isHistory = false) {
     // 1. Limpiar widget existente
     const existingChat = document.querySelector('div#n8n-chat') || document.querySelector('.n8n-chat-widget');
     if (existingChat) {
@@ -146,7 +146,7 @@ function initChat(selectedTheme = 'light') {
         theme: selectedTheme,
         sessionId: sessionId,
         showWelcomeScreen: false,
-        initialMessages: [
+        initialMessages: isHistory ? [] :[
             '¡Hola! 👋 Soy tu asistente financiero.',
             '¿En qué puedo ayudarte hoy?'
         ],
@@ -722,7 +722,7 @@ async function openSession(sessionId) {
     if (existingChat) existingChat.remove();
     
     setTimeout(() => {
-        initChat(isDark ? 'dark' : 'light');
+        initChat(isDark ? 'dark' : 'light', true);
         
         // 3. Inyectar los mensajes anteriores en el chat
         setTimeout(() => {
