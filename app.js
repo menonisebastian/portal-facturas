@@ -651,8 +651,6 @@ window.addEventListener('load', () => {
 
 // --- HISTORIAL Y GESTIÓN DE SESIONES DEL ASISTENTE ---
 
-const HISTORIAL_API_URL = 'https://TU_N8N/webhook/api-historial-chats'; // ← tu URL real
-
 async function loadChatHistory() {
     const ul = document.getElementById('assistant-chat-history');
     if (!ul) return;
