@@ -186,61 +186,66 @@ function initChat(selectedTheme = 'light', isHistory = false) {
         });
         observer.observe(chatContainer, { childList: true, subtree: true });
 
-        // --- B: Inyector de Starter Prompts (Seguro y aislado) ---
-        const promptInterval = setInterval(() => {
-            const messagesList = document.querySelector('.chat-messages-list');
-            
-            if (messagesList && !document.getElementById('custom-starter-prompts')) {
-                const promptsContainer = document.createElement('div');
-                promptsContainer.id = 'custom-starter-prompts';
-                promptsContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px; padding: 10px 20px; margin-top: 5px; margin-bottom: 15px; align-items: flex-end; animation: fadeIn 0.5s ease;';
+        if (!isHistory) {
 
-                const prompts = [
-                    { label: '📊 Resumen de mes', message: 'Por favor, analízame las facturas de este mes y dame un resumen financiero.' },
-                    { label: '🔍 Buscar factura', message: 'Necesito que me ayudes a buscar una factura específica.' },
-                    { label: '💰 Gastos totales', message: '¿Cuáles han sido los gastos totales registrados hasta ahora?' }
-                ];
+            // --- B: Inyector de Starter Prompts (Seguro y aislado) ---
+            const promptInterval = setInterval(() => {
 
-                const isDark = selectedTheme === 'dark';
+                const messagesList = document.querySelector('.chat-messages-list');
+                
+                if (messagesList && !document.getElementById('custom-starter-prompts')) {
+                    const promptsContainer = document.createElement('div');
+                    promptsContainer.id = 'custom-starter-prompts';
+                    promptsContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px; padding: 10px 20px; margin-top: 5px; margin-bottom: 15px; align-items: flex-end; animation: fadeIn 0.5s ease;';
 
-                prompts.forEach(p => {
-                    const btn = document.createElement('button');
-                    btn.innerText = p.label;
-                    
-                    const bg = isDark ? 'rgba(191, 194, 255, 0.1)' : 'rgba(3, 0, 134, 0.05)';
-                    const color = isDark ? '#bfc2ff' : '#030086';
-                    const border = isDark ? 'rgba(191, 194, 255, 0.3)' : 'rgba(3, 0, 134, 0.2)';
-                    
-                    btn.style.cssText = `background: ${bg}; color: ${color}; border: 1px solid ${border}; padding: 8px 14px; border-radius: 16px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; max-width: 85%; text-align: left;`;
-                    
-                    btn.onmouseover = () => btn.style.background = isDark ? 'rgba(191, 194, 255, 0.2)' : 'rgba(3, 0, 134, 0.1)';
-                    btn.onmouseout = () => btn.style.background = bg;
+                    const prompts = [
+                        { label: '📊 Resumen de mes', message: 'Por favor, analízame las facturas de este mes y dame un resumen financiero.' },
+                        { label: '🔍 Buscar factura', message: 'Necesito que me ayudes a buscar una factura específica.' },
+                        { label: '💰 Gastos totales', message: '¿Cuáles han sido los gastos totales registrados hasta ahora?' }
+                    ];
 
-                    btn.onclick = () => {
-                        promptsContainer.style.opacity = '0';
-                        setTimeout(() => promptsContainer.style.display = 'none', 300);
+                    const isDark = selectedTheme === 'dark';
+
+                    prompts.forEach(p => {
+                        const btn = document.createElement('button');
+                        btn.innerText = p.label;
                         
-                        const chatInput = document.querySelector('.chat-input textarea');
-                        const sendBtn = document.querySelector('.chat-input-send-button');
+                        const bg = isDark ? 'rgba(191, 194, 255, 0.1)' : 'rgba(3, 0, 134, 0.05)';
+                        const color = isDark ? '#bfc2ff' : '#030086';
+                        const border = isDark ? 'rgba(191, 194, 255, 0.3)' : 'rgba(3, 0, 134, 0.2)';
                         
-                        if (chatInput && sendBtn) {
-                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
-                            nativeInputValueSetter.call(chatInput, p.message);
-                            chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        btn.style.cssText = `background: ${bg}; color: ${color}; border: 1px solid ${border}; padding: 8px 14px; border-radius: 16px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; max-width: 85%; text-align: left;`;
+                        
+                        btn.onmouseover = () => btn.style.background = isDark ? 'rgba(191, 194, 255, 0.2)' : 'rgba(3, 0, 134, 0.1)';
+                        btn.onmouseout = () => btn.style.background = bg;
+
+                        btn.onclick = () => {
+                            promptsContainer.style.opacity = '0';
+                            setTimeout(() => promptsContainer.style.display = 'none', 300);
                             
-                            sendBtn.removeAttribute('disabled');
-                            sendBtn.style.opacity = "1";
-                            sendBtn.style.pointerEvents = "auto";
-                            sendBtn.click();
-                        }
-                    };
-                    promptsContainer.appendChild(btn);
-                });
+                            const chatInput = document.querySelector('.chat-input textarea');
+                            const sendBtn = document.querySelector('.chat-input-send-button');
+                            
+                            if (chatInput && sendBtn) {
+                                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+                                nativeInputValueSetter.call(chatInput, p.message);
+                                chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                
+                                sendBtn.removeAttribute('disabled');
+                                sendBtn.style.opacity = "1";
+                                sendBtn.style.pointerEvents = "auto";
+                                sendBtn.click();
+                            }
+                        };
+                        promptsContainer.appendChild(btn);
+                    });
 
-                messagesList.appendChild(promptsContainer);
-                clearInterval(promptInterval); 
-            }
-        }, 500); 
+                    messagesList.appendChild(promptsContainer);
+                    clearInterval(promptInterval); 
+                }
+                
+            }, 500); 
+        }
 
     }, 1500);
 }
