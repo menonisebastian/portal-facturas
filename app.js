@@ -711,12 +711,20 @@ async function loadChatHistory() {
 function openSession(sessionId) {
     localStorage.setItem('n8n_chat_sessionId', sessionId);
     const isDark = document.documentElement.classList.contains('dark');
-    initChat(isDark ? 'dark' : 'light');
-    // Abrir la ventana del chat
+    
+    // Destruir el chat actual completamente
+    const existingChat = document.querySelector('div#n8n-chat');
+    if (existingChat) existingChat.remove();
+    
+    // Esperar más tiempo antes de reiniciar
     setTimeout(() => {
-        const toggle = document.querySelector('.chat-window-toggle');
-        if (toggle) toggle.click();
-    }, 400);
+        initChat(isDark ? 'dark' : 'light');
+        // Abrir el chat después de que se inicialice
+        setTimeout(() => {
+            const toggle = document.querySelector('.chat-window-toggle');
+            if (toggle) toggle.click();
+        }, 800);
+    }, 300);
 }
 
 // Nueva conversación: genera sessionId fresco
