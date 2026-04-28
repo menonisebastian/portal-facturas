@@ -94,6 +94,8 @@ function showSection(sectionId, updateHistory = true) {
         loadRealInvoicesTable();
     } else if (sectionId === 'dashboard') {
         loadRealDashboardData();
+    } else if (sectionId === 'assistant') {
+        loadChatHistory();
     }
 }
 
@@ -451,6 +453,7 @@ setInterval(() => {
 // --- 6. INTEGRACIÓN REAL CON N8N Y DASHBOARD ---
 
 const REAL_API_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/api-portal';
+const HISTORIAL_API_URL = 'https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/api-historial-chats';
 
 const Cache = {
     _data: null,               
@@ -645,6 +648,95 @@ async function previewInvoice(invoiceId) {
 window.addEventListener('load', () => {
     setTimeout(() => Cache.fetch().catch(() => {}), 300);
 });
+
+// --- HISTORIAL Y GESTIÓN DE SESIONES DEL ASISTENTE ---
+
+const HISTORIAL_API_URL = 'https://TU_N8N/webhook/api-historial-chats'; // ← tu URL real
+
+async function loadChatHistory() {
+    const ul = document.getElementById('assistant-chat-history');
+    if (!ul) return;
+
+    ul.innerHTML = `
+        <li class="text-center py-4">
+            <div class="h-4 w-3/4 mx-auto bg-slate-200 dark:bg-slate-700 rounded animate-pulse mb-3"></div>
+            <div class="h-4 w-1/2 mx-auto bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+        </li>`;
+
+    try {
+        const res = await fetch(HISTORIAL_API_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const sesiones = await res.json();
+
+        if (!sesiones.length) {
+            ul.innerHTML = `<li class="text-center py-8 text-sm text-on-surface-variant dark:text-slate-400">
+                No hay conversaciones anteriores.
+            </li>`;
+            return;
+        }
+
+        ul.innerHTML = '';
+        sesiones.forEach(s => {
+            const li = document.createElement('li');
+            const fecha = new Date(s.fecha_inicio).toLocaleDateString('es-ES', 
+                { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+            const resumen = s.primer_mensaje 
+                ? s.primer_mensaje.substring(0, 55) + (s.primer_mensaje.length > 55 ? '…' : '')
+                : 'Conversación sin texto';
+
+            li.innerHTML = `
+                <button onclick="openSession('${s.session_id}')" 
+                    class="w-full text-left p-3 rounded-xl hover:bg-primary-fixed/30 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-outline-variant/20 group">
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-outlined text-primary dark:text-[#bfc2ff] mt-0.5 flex-shrink-0" style="font-size:18px">chat</span>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold dark:text-white truncate">${resumen}</p>
+                            <p class="text-[10px] text-on-surface-variant dark:text-slate-400 mt-0.5">
+                                ${fecha} · ${s.num_mensajes} mensajes
+                            </p>
+                        </div>
+                    </div>
+                </button>`;
+            ul.appendChild(li);
+        });
+
+    } catch (err) {
+        ul.innerHTML = `<li class="text-center py-4 text-sm text-red-500">
+            Error al cargar el historial. 
+            <button onclick="loadChatHistory()" class="underline ml-1">Reintentar</button>
+        </li>`;
+        console.error('Error historial chats:', err);
+    }
+}
+
+// Abrir una sesión anterior: cambia el sessionId y abre el chat
+function openSession(sessionId) {
+    localStorage.setItem('n8n_chat_sessionId', sessionId);
+    const isDark = document.documentElement.classList.contains('dark');
+    initChat(isDark ? 'dark' : 'light');
+    // Abrir la ventana del chat
+    setTimeout(() => {
+        const toggle = document.querySelector('.chat-window-toggle');
+        if (toggle) toggle.click();
+    }, 400);
+}
+
+// Nueva conversación: genera sessionId fresco
+document.getElementById('btn-new-chat-assistant')?.addEventListener('click', () => {
+    const newId = crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : Date.now().toString(36) + Math.random().toString(36).substr(2);
+    localStorage.setItem('n8n_chat_sessionId', newId);
+    const isDark = document.documentElement.classList.contains('dark');
+    initChat(isDark ? 'dark' : 'light');
+    setTimeout(() => {
+        const toggle = document.querySelector('.chat-window-toggle');
+        if (toggle) toggle.click();
+    }, 400);
+});
+
+// Exponer para uso desde HTML
+window.openSession = openSession;
 
 window.Cache = Cache;
 handleRouting();
