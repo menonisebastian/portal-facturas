@@ -241,20 +241,20 @@ function initChat(selectedTheme = 'light', isHistory = false) {
                     });
 
                     messagesList.appendChild(promptsContainer);
+                    clearInterval(promptInterval);
+
                     // Ocultar prompts cuando el usuario empiece a escribir
-                    const chatTextarea = document.querySelector('.chat-input textarea');
-                    if (chatTextarea) {
-                        const hidePromptsOnInput = () => {
-                            if (promptsContainer.style.display !== 'none') {
+                    const waitForTextarea = setInterval(() => {
+                        const chatTextarea = document.querySelector('.chat-input textarea');
+                        if (chatTextarea) {
+                            clearInterval(waitForTextarea);
+                            chatTextarea.addEventListener('input', () => {
                                 promptsContainer.style.opacity = '0';
                                 promptsContainer.style.transition = 'opacity 0.3s ease';
                                 setTimeout(() => promptsContainer.style.display = 'none', 300);
-                            }
-                            chatTextarea.removeEventListener('input', hidePromptsOnInput);
-                        };
-                        chatTextarea.addEventListener('input', hidePromptsOnInput);
-                    }
-                    clearInterval(promptInterval); 
+                            }, { once: true });
+                        }
+                    }, 200);
                 }
                 
             }, 500); 
