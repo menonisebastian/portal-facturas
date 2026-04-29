@@ -241,6 +241,19 @@ function initChat(selectedTheme = 'light', isHistory = false) {
                     });
 
                     messagesList.appendChild(promptsContainer);
+                    // Ocultar prompts cuando el usuario empiece a escribir
+                    const chatTextarea = document.querySelector('.chat-input textarea');
+                    if (chatTextarea) {
+                        const hidePromptsOnInput = () => {
+                            if (promptsContainer.style.display !== 'none') {
+                                promptsContainer.style.opacity = '0';
+                                promptsContainer.style.transition = 'opacity 0.3s ease';
+                                setTimeout(() => promptsContainer.style.display = 'none', 300);
+                            }
+                            chatTextarea.removeEventListener('input', hidePromptsOnInput);
+                        };
+                        chatTextarea.addEventListener('input', hidePromptsOnInput);
+                    }
                     clearInterval(promptInterval); 
                 }
                 
