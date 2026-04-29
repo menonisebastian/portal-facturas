@@ -33,6 +33,65 @@ function excelToJSDate(serial) {
     return date.toLocaleDateString('es-ES'); // Formato DD/MM/YYYY
 }
 
+// Tasas de conversión aproximadas a EUR (actualizar periódicamente o usar API)
+
+let FX_TO_EUR = {
+    EUR: 1,
+    USD: 0.92,
+    GBP: 1.17,
+    MXN: 0.054,
+    COP: 0.00023,
+    ARS: 0.001,
+};
+
+async function fetchFXRates() {
+    try {
+        const res = await fetch('https://api.frankfurter.app/latest?base=EUR');
+        if (!res.ok) throw new Error('Error al obtener tasas');
+        const data = await res.json();
+        // data.rates = { USD: 1.09, GBP: 0.86, ... } → invertir a "cuántos EUR vale 1 unidad"
+        Object.entries(data.rates).forEach(([code, rate]) => {
+            FX_TO_EUR[code] = 1 / rate;
+        });
+        Cache.invalidate(); // ← Forzar recálculo con tipos reales
+        console.log('✅ Tasas de cambio actualizadas:', new Date().toLocaleTimeString());
+    } catch (err) {
+        console.warn('⚠️ No se pudieron actualizar las tasas. Usando valores de fallback.', err);
+        // FX_TO_EUR mantiene los valores estáticos definidos arriba
+    }
+}
+
+fetchFXRates(); // Llamar al cargar la app
+
+function toEUR(amount, currency) {
+    const rate = FX_TO_EUR[currency?.toUpperCase()] ?? 1;
+    return amount * rate;
+}
+
+// Parser robusto: maneja "1.250,50" (ES) y "1,250.50" (EN) y "1250.50"
+function parseAmount(raw) {
+    if (!raw && raw !== 0) return 0;
+    const str = String(raw).trim();
+    // Si tiene coma Y punto: decidir cuál es el decimal
+    if (str.includes('.') && str.includes(',')) {
+        // El último separador es el decimal
+        const lastDot   = str.lastIndexOf('.');
+        const lastComma = str.lastIndexOf(',');
+        if (lastComma > lastDot) {
+            // Formato europeo: 1.250,50
+            return parseFloat(str.replace(/\./g, '').replace(',', '.'));
+        } else {
+            // Formato anglosajón: 1,250.50
+            return parseFloat(str.replace(/,/g, ''));
+        }
+    }
+    // Solo coma → separador decimal europeo
+    if (str.includes(',') && !str.includes('.')) {
+        return parseFloat(str.replace(',', '.'));
+    }
+    return parseFloat(str) || 0;
+}
+
 function toggleSidebar(forceClose = false) {
     if (forceClose) {
         sidebar?.classList.remove('translate-x-0');
@@ -560,15 +619,20 @@ async function loadRealDashboardData() {
 }
 
 function renderDashboardStats(invoices, elProcesadas, elPendientes, elVolumen) {
-    let totalProcesadas = 0, totalPendientes = 0, volumenTotal = 0;
+    let totalProcesadas = 0, totalPendientes = 0, volumenEUR = 0;
 
     invoices.forEach(inv => {
         if (inv.status === 'PROCESADO') totalProcesadas++;
         else totalPendientes++;
-        volumenTotal += parseFloat(String(inv.amount).replace(',', '.')) || 0;
+        
+        const amount   = parseAmount(inv.amount);
+        const currency = (inv.currency || 'EUR').toUpperCase();
+        volumenEUR += toEUR(amount, currency);   // ← Conversión aquí
     });
 
-    const formatoMoneda = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(volumenTotal);
+    const formatoMoneda = new Intl.NumberFormat('es-ES', {
+        style: 'currency', currency: 'EUR', maximumFractionDigits: 0
+    }).format(volumenEUR);
 
     elProcesadas.textContent = totalProcesadas;
     elPendientes.textContent = totalPendientes;
@@ -637,13 +701,34 @@ function renderInvoiceRows(invoices, tbody) {
 
         const fechaFormateada = excelToJSDate(inv.date);
         const isProcessed = inv.status === 'PROCESADO';
-        const divisa = inv.currency || inv.moneda || '€';
+
+        // ── NUEVO: lógica de divisa ──────────────────────────────
+        const amountNum = parseAmount(inv.amount);
+        const currency  = (inv.currency || inv.moneda || 'EUR').toUpperCase();
+        const isEUR     = currency === 'EUR';
+
+        const importeOriginal = new Intl.NumberFormat('es-ES', {
+            style: 'currency',
+            currency: currency,
+            maximumFractionDigits: 2
+        }).format(amountNum);
+
+        const importeEUR = isEUR ? '' : new Intl.NumberFormat('es-ES', {
+            style: 'currency', currency: 'EUR', maximumFractionDigits: 2
+        }).format(toEUR(amountNum, currency));
+        // ────────────────────────────────────────────────────────
 
         tr.innerHTML = `
             <td class="px-6 py-4 font-bold text-primary dark:text-[#bfc2ff]">${inv.id}</td>
             <td class="px-6 py-4 text-on-surface dark:text-white font-medium">${inv.client}</td>
             <td class="px-6 py-4 text-sm text-on-surface-variant dark:text-slate-400">${fechaFormateada}</td>
-            <td class="px-6 py-4 font-bold dark:text-white">${inv.amount} ${divisa}</td>
+            <td class="px-6 py-4">
+                <span class="font-bold dark:text-white">${importeOriginal}</span>
+                ${!isEUR ? `
+                    <span class="block text-[10px] text-on-surface-variant dark:text-slate-400 mt-0.5">≈ ${importeEUR}</span>
+                    <span class="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">${currency}</span>
+                ` : ''}
+            </td>
             <td class="px-6 py-4">
                 <span class="px-3 py-1 ${isProcessed ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400'} rounded-full text-[10px] font-bold uppercase tracking-wider">
                     ${inv.status}
@@ -653,7 +738,7 @@ function renderInvoiceRows(invoices, tbody) {
     });
 
     tbody.innerHTML = '';
-    tbody.appendChild(fragment); 
+    tbody.appendChild(fragment);
 }
 
 async function previewInvoice(invoiceId) {
