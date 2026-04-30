@@ -8,46 +8,90 @@ export function initUpload() {
     const fileNameDisplay = document.getElementById('file-name');
     const fileInfoContainer = document.getElementById('file-info');
     const uploadForm = document.getElementById('uploadForm');
+    const dropzone = document.querySelector('.upload-dropzone');
 
+    // --- Función Helper para procesar el archivo seleccionado ---
+    function handleFileSelection(file) {
+        if (!file) {
+            fileInfoContainer.classList.add('hidden');
+            return;
+        }
+
+        // ── Validar archivo ──
+        const validation = validateFile(file);
+        if (!validation.valid) {
+            fileInfoContainer.classList.remove('hidden');
+            fileNameDisplay.textContent = `⚠️ ${validation.error}`;
+            fileNameDisplay.classList.add('text-red-500');
+            fileNameDisplay.classList.remove('text-primary', 'dark:text-[#bfc2ff]');
+            fileInput.value = ''; // Limpiar selección inválida en el input real
+            return;
+        }
+
+        // Archivo válido
+        fileNameDisplay.classList.remove('text-red-500');
+        fileNameDisplay.classList.add('text-primary', 'dark:text-[#bfc2ff]');
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        fileNameDisplay.textContent = `${file.name} (${sizeMB} MB)`;
+        fileInfoContainer.classList.remove('hidden');
+
+        // Vista previa
+        const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
+        if (previewContainer) {
+            const fileURL = URL.createObjectURL(file);
+            previewContainer.innerHTML = `
+                <div class="absolute top-4 right-4 z-10 flex gap-2">
+                     <div class="px-3 py-1 bg-slate-800/90 backdrop-blur rounded-lg text-[10px] font-bold text-white uppercase tracking-widest">Documento Original</div>
+                </div>
+                <iframe src="${fileURL}#toolbar=0" class="w-full h-[500px] border-none rounded-lg shadow-inner" title="Vista previa local"></iframe>
+            `;
+        }
+    }
+
+    // --- Drag and Drop Listeners ---
+    if (dropzone) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => {
+                dropzone.classList.add('drag-over');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => {
+                dropzone.classList.remove('drag-over');
+            }, false);
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const file = dt.files[0];
+            
+            if (file) {
+                // Sincronizar con el input real por si acaso el usuario luego pulsa enviar sin cambiar nada
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+                
+                handleFileSelection(file);
+            }
+        }, false);
+    }
+
+    // --- Input File Listener ---
     if (fileInput) {
         fileInput.addEventListener('change', () => {
-            const file = fileInput.files[0];
-            if (!file) {
-                fileInfoContainer.classList.add('hidden');
-                return;
-            }
-
-            // ── Validar archivo al seleccionar ──
-            const validation = validateFile(file);
-            if (!validation.valid) {
-                fileInfoContainer.classList.remove('hidden');
-                fileNameDisplay.textContent = `⚠️ ${validation.error}`;
-                fileNameDisplay.classList.add('text-red-500');
-                fileNameDisplay.classList.remove('text-primary', 'dark:text-[#bfc2ff]');
-                fileInput.value = ''; // Limpiar selección inválida
-                return;
-            }
-
-            // Archivo válido
-            fileNameDisplay.classList.remove('text-red-500');
-            fileNameDisplay.classList.add('text-primary', 'dark:text-[#bfc2ff]');
-            const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-            fileNameDisplay.textContent = `${file.name} (${sizeMB} MB)`;
-            fileInfoContainer.classList.remove('hidden');
-
-            const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
-            if (previewContainer) {
-                const fileURL = URL.createObjectURL(file);
-                previewContainer.innerHTML = `
-                    <div class="absolute top-4 right-4 z-10 flex gap-2">
-                         <div class="px-3 py-1 bg-slate-800/90 backdrop-blur rounded-lg text-[10px] font-bold text-white uppercase tracking-widest">Documento Original</div>
-                    </div>
-                    <iframe src="${fileURL}#toolbar=0" class="w-full h-[500px] border-none rounded-lg shadow-inner" title="Vista previa local"></iframe>
-                `;
-            }
+            handleFileSelection(fileInput.files[0]);
         });
     }
 
+    // --- Submit Listener ---
     if (uploadForm) {
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault(); 
@@ -65,7 +109,7 @@ export function initUpload() {
             const file = fileInput.files[0];
             if (!file) return;
 
-            // ── Validación pre-envío ──
+            // ── Validación final pre-envío ──
             const validation = validateFile(file);
             if (!validation.valid) {
                 fileNameDisplay.textContent = `⚠️ ${validation.error}`;

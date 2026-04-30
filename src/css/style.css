@@ -340,8 +340,19 @@
 }
 
 .upload-dropzone.drag-over {
-    border-color: #1111bb;
-    background-color: rgba(17, 17, 187, 0.05);
+    border-color: #030086;
+    background-color: rgba(3, 0, 134, 0.05);
+    transform: scale(1.01);
+    border-style: solid;
+}
+
+.upload-dropzone.drag-over .upload-icon-wrapper {
+    background-color: #030086;
+    color: white;
+}
+
+.upload-dropzone.drag-over .upload-icon-wrapper span {
+    color: white !important;
 }
 
 .upload-icon-wrapper {
