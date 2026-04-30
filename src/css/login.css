@@ -189,6 +189,8 @@ input[type="password"], input[type="text"] {
     outline: none;
     min-width: 0;
     -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 input[type="password"]:focus, input[type="text"]:focus {
     border-color: var(--primary-light);
