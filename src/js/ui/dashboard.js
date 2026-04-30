@@ -6,36 +6,40 @@ import { parseAmount, toEUR } from '../utils.js';
  * while data is being fetched from the API.
  */
 export function renderDashboardSkeleton() {
-    const cards = [
-        { id: 'dash-procesadas', hasBadge: true },
-        { id: 'dash-pendientes', hasIcon: true },
-        { id: 'dash-volumen',    hasSubtext: true },
-    ];
-
-    cards.forEach(({ id, hasBadge, hasIcon, hasSubtext }) => {
+    // Show spinner inside each stat card's value + hide companion elements
+    ['dash-procesadas', 'dash-pendientes', 'dash-volumen'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
 
-        // Replace just the value with a shimmer block
-        el.innerHTML = `<div class="skeleton-shimmer skeleton-line-lg" style="width: 55%;"></div>`;
-
-        // Also shimmer the companion element (badge / icon / subtitle)
-        if (hasBadge) {
-            const badge = document.getElementById('badge-procesadas');
-            if (badge) {
-                badge.style.opacity = '0';
-                badge.style.transition = 'opacity 0.4s ease';
-            }
-        }
-        if (hasSubtext) {
-            const mesActual = document.getElementById('dash-mes-actual');
-            if (mesActual) {
-                mesActual.innerHTML = `<div class="skeleton-shimmer skeleton-line-sm" style="width: 80px; display: inline-block;"></div>`;
-            }
-        }
+        // Replace the value area with a spinner + subtle text
+        el.innerHTML = `
+            <div class="flex items-center gap-3">
+                <div class="spinner-branded"></div>
+                <span class="loader-text">Cargando</span>
+            </div>`;
     });
 
-    // Add a subtle loading indicator to the section title
+    // Hide the percentage badge while loading
+    const badge = document.getElementById('badge-procesadas');
+    if (badge) {
+        badge.style.opacity = '0';
+        badge.style.transition = 'opacity 0.4s ease';
+    }
+
+    // Hide the icon in "Pendientes" card
+    const pendientesIcon = document.querySelector('#dash-pendientes')?.closest('.stat-card')?.querySelector('.w-12');
+    if (pendientesIcon) {
+        pendientesIcon.style.opacity = '0';
+        pendientesIcon.style.transition = 'opacity 0.4s ease';
+    }
+
+    // Shimmer the month label
+    const mesActual = document.getElementById('dash-mes-actual');
+    if (mesActual) {
+        mesActual.innerHTML = `<div class="skeleton-shimmer skeleton-line-sm" style="width: 80px; display: inline-block;"></div>`;
+    }
+
+    // Add loading dots to section title
     const sectionTitle = document.querySelector('#dashboard-section h1');
     if (sectionTitle && !sectionTitle.querySelector('.loading-dots')) {
         const dots = document.createElement('span');
@@ -126,6 +130,10 @@ export function renderDashboardStats(invoices, elProcesadas, elPendientes, elVol
     const badgeProcesadas = document.getElementById('badge-procesadas');
     const textProcesadas = document.getElementById('text-procesadas');
     const iconProcesadas = document.getElementById('icon-procesadas');
+
+    // Restore hidden companion elements
+    const pendientesIcon = document.querySelector('#dash-pendientes')?.closest('.stat-card')?.querySelector('.w-12');
+    if (pendientesIcon) pendientesIcon.style.opacity = '1';
 
     if (badgeProcesadas && textProcesadas && iconProcesadas) {
         badgeProcesadas.style.opacity = '1';
