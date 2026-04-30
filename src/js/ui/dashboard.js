@@ -1,11 +1,56 @@
 import { Cache } from '../api.js';
 import { parseAmount, toEUR } from '../utils.js';
 
+/**
+ * Renders premium shimmer skeleton placeholders inside each stat card
+ * while data is being fetched from the API.
+ */
 export function renderDashboardSkeleton() {
-    ['dash-procesadas', 'dash-pendientes', 'dash-volumen'].forEach(id => {
+    const cards = [
+        { id: 'dash-procesadas', hasBadge: true },
+        { id: 'dash-pendientes', hasIcon: true },
+        { id: 'dash-volumen',    hasSubtext: true },
+    ];
+
+    cards.forEach(({ id, hasBadge, hasIcon, hasSubtext }) => {
         const el = document.getElementById(id);
-        if (el) el.innerHTML = '<div class="h-12 w-24 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse"></div>';
+        if (!el) return;
+
+        // Replace just the value with a shimmer block
+        el.innerHTML = `<div class="skeleton-shimmer skeleton-line-lg" style="width: 55%;"></div>`;
+
+        // Also shimmer the companion element (badge / icon / subtitle)
+        if (hasBadge) {
+            const badge = document.getElementById('badge-procesadas');
+            if (badge) {
+                badge.style.opacity = '0';
+                badge.style.transition = 'opacity 0.4s ease';
+            }
+        }
+        if (hasSubtext) {
+            const mesActual = document.getElementById('dash-mes-actual');
+            if (mesActual) {
+                mesActual.innerHTML = `<div class="skeleton-shimmer skeleton-line-sm" style="width: 80px; display: inline-block;"></div>`;
+            }
+        }
     });
+
+    // Add a subtle loading indicator to the section title
+    const sectionTitle = document.querySelector('#dashboard-section h1');
+    if (sectionTitle && !sectionTitle.querySelector('.loading-dots')) {
+        const dots = document.createElement('span');
+        dots.className = 'loading-dots';
+        dots.innerHTML = '<span></span><span></span><span></span>';
+        sectionTitle.appendChild(dots);
+    }
+}
+
+/**
+ * Removes the loading dots from the section title after data loads.
+ */
+function clearLoadingIndicator() {
+    const dots = document.querySelector('#dashboard-section h1 .loading-dots');
+    if (dots) dots.remove();
 }
 
 export async function loadRealDashboardData() {
@@ -22,7 +67,9 @@ export async function loadRealDashboardData() {
     }
 
     if (Cache.isValid()) {
+        clearLoadingIndicator();
         renderDashboardStats(Cache._data, elProcesadas, elPendientes, elVolumen);
+        animateStatCards();
         return;
     }
 
@@ -30,12 +77,28 @@ export async function loadRealDashboardData() {
 
     try {
         const invoices = await Cache.fetch();
+        clearLoadingIndicator();
         renderDashboardStats(invoices, elProcesadas, elPendientes, elVolumen);
+        animateStatCards();
     } catch (error) {
         console.error('Error cargando Dashboard:', error);
+        clearLoadingIndicator();
         [elProcesadas, elPendientes, elVolumen].forEach(el => {
             if (el) el.innerHTML = '<span class="text-base text-red-500">Error</span>';
         });
+    }
+}
+
+/**
+ * Adds the staggered entrance animation to the stat cards grid.
+ */
+function animateStatCards() {
+    const grid = document.querySelector('#dashboard-section .grid');
+    if (grid) {
+        grid.classList.remove('animate-stagger');
+        // Force reflow so re-adding the class restarts the animation
+        void grid.offsetWidth;
+        grid.classList.add('animate-stagger');
     }
 }
 
@@ -59,11 +122,14 @@ export function renderDashboardStats(invoices, elProcesadas, elPendientes, elVol
     elPendientes.textContent = totalPendientes;
     elVolumen.textContent    = formatoMoneda;
 
+    // Restore badge visibility
     const badgeProcesadas = document.getElementById('badge-procesadas');
     const textProcesadas = document.getElementById('text-procesadas');
     const iconProcesadas = document.getElementById('icon-procesadas');
 
     if (badgeProcesadas && textProcesadas && iconProcesadas) {
+        badgeProcesadas.style.opacity = '1';
+
         const totalFacturas = totalProcesadas + totalPendientes;
         const porcentaje = totalFacturas > 0 ? Math.round((totalProcesadas / totalFacturas) * 100) : 0;
         textProcesadas.textContent = `${porcentaje}%`;

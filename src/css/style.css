@@ -641,6 +641,191 @@ div#n8n-chat .chat-window {
     color: white !important;
 }
 
+/* ============================================
+   LOADING SKELETONS & ANIMATIONS
+   ============================================ */
+
+/* --- Shimmer gradient effect --- */
+@keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+
+.skeleton-shimmer {
+    background: linear-gradient(
+        90deg,
+        #e2e5ea 25%,
+        #f0f2f5 37%,
+        #e2e5ea 63%
+    );
+    background-size: 800px 100%;
+    animation: shimmer 1.8s ease-in-out infinite;
+    border-radius: 0.5rem;
+}
+
+.dark .skeleton-shimmer {
+    background: linear-gradient(
+        90deg,
+        #1e293b 25%,
+        #334155 37%,
+        #1e293b 63%
+    );
+    background-size: 800px 100%;
+}
+
+/* --- Skeleton building blocks --- */
+.skeleton-line {
+    height: 0.875rem;
+    border-radius: 0.375rem;
+}
+
+.skeleton-line-sm {
+    height: 0.625rem;
+    border-radius: 0.25rem;
+}
+
+.skeleton-line-lg {
+    height: 2.5rem;
+    border-radius: 0.5rem;
+}
+
+.skeleton-circle {
+    border-radius: 9999px;
+}
+
+/* --- Section loading overlay --- */
+.section-loader {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(251, 249, 248, 0.85);
+    backdrop-filter: blur(6px);
+    z-index: 20;
+    border-radius: 0.75rem;
+    gap: 1.25rem;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.dark .section-loader {
+    background: rgba(15, 23, 42, 0.85);
+}
+
+.section-loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Branded spinner */
+@keyframes spin-branded {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spinner-branded {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 3px solid rgba(3, 0, 134, 0.15);
+    border-top-color: #030086;
+    border-radius: 9999px;
+    animation: spin-branded 0.8s linear infinite;
+}
+
+.dark .spinner-branded {
+    border-color: rgba(191, 194, 255, 0.15);
+    border-top-color: #bfc2ff;
+}
+
+.loader-text {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #454555;
+    letter-spacing: 0.05em;
+}
+
+.dark .loader-text {
+    color: #94a3b8;
+}
+
+/* --- Staggered entrance for loaded items --- */
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-stagger > * {
+    opacity: 0;
+    animation: slideUpFade 0.45s ease forwards;
+}
+
+.animate-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.animate-stagger > *:nth-child(2) { animation-delay: 0.12s; }
+.animate-stagger > *:nth-child(3) { animation-delay: 0.19s; }
+.animate-stagger > *:nth-child(4) { animation-delay: 0.26s; }
+.animate-stagger > *:nth-child(5) { animation-delay: 0.33s; }
+.animate-stagger > *:nth-child(6) { animation-delay: 0.40s; }
+.animate-stagger > *:nth-child(7) { animation-delay: 0.47s; }
+.animate-stagger > *:nth-child(8) { animation-delay: 0.54s; }
+
+/* Pulse dot animation for the "Cargando..." text */
+@keyframes pulseDot {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40%           { opacity: 1; transform: scale(1); }
+}
+
+.loading-dots {
+    display: inline-flex;
+    gap: 4px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.loading-dots span {
+    width: 5px;
+    height: 5px;
+    background: currentColor;
+    border-radius: 9999px;
+    animation: pulseDot 1.4s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+/* Skeleton stat card contents */
+.skeleton-stat-card .skeleton-title {
+    width: 60%;
+    height: 0.625rem;
+    margin-bottom: 1rem;
+}
+
+.skeleton-stat-card .skeleton-value {
+    width: 45%;
+    height: 2.5rem;
+}
+
+.skeleton-stat-card .skeleton-badge {
+    width: 3rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+}
+
+/* Table skeleton rows */
+.skeleton-table-row td {
+    padding: 1rem 1.5rem;
+}
+
+.skeleton-table-cell {
+    height: 0.875rem;
+    border-radius: 0.375rem;
+}
+
+/* ============================================
+   END LOADING ANIMATIONS
+   ============================================ */
+
 /* Scrollbar */
 ::-webkit-scrollbar {
     width: 6px;

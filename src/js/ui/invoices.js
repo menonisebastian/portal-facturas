@@ -2,15 +2,75 @@ import { Cache } from '../api.js';
 import { REAL_API_URL } from '../config.js';
 import { excelToJSDate, parseAmount, toEUR } from '../utils.js';
 
+/**
+ * Renders a premium shimmer-skeleton table while invoice data is loading.
+ * Each row simulates the 5-column layout with realistic widths.
+ */
 export function renderTableSkeleton(tbody) {
-    const rows = Array.from({ length: 5 }, () => `
-        <tr class="data-table-row">
-            ${['w-20', 'w-32', 'w-24', 'w-16', 'w-16'].map(w => `
+    const cellWidths = [
+        ['w-16', 'w-32', 'w-24', 'w-20', 'w-16'],
+        ['w-20', 'w-28', 'w-20', 'w-16', 'w-14'],
+        ['w-14', 'w-36', 'w-24', 'w-20', 'w-12'],
+        ['w-18', 'w-24', 'w-20', 'w-16', 'w-16'],
+        ['w-16', 'w-32', 'w-24', 'w-14', 'w-14'],
+        ['w-20', 'w-28', 'w-20', 'w-20', 'w-16'],
+    ];
+
+    const rows = cellWidths.map((widths, rowIdx) => `
+        <tr class="data-table-row skeleton-table-row" style="animation: fadeIn 0.3s ease ${rowIdx * 0.06}s both;">
+            ${widths.map(w => `
                 <td class="data-table-cell">
-                    <div class="h-4 ${w} bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                    <div class="skeleton-shimmer skeleton-table-cell ${w}" style="max-width: 100%;"></div>
                 </td>`).join('')}
         </tr>`).join('');
+
     tbody.innerHTML = rows;
+
+    // Add loading overlay to the table container
+    const container = document.querySelector('#invoices-section .data-table-container');
+    if (container && !container.querySelector('.section-loader')) {
+        container.style.position = 'relative';
+        const loader = document.createElement('div');
+        loader.className = 'section-loader';
+        loader.id = 'invoices-loader';
+        loader.innerHTML = `
+            <div class="spinner-branded"></div>
+            <p class="loader-text">
+                Cargando facturas
+                <span class="loading-dots"><span></span><span></span><span></span></span>
+            </p>
+        `;
+        container.appendChild(loader);
+    }
+
+    // Also update the section title
+    const sectionTitle = document.querySelector('#invoices-section h2');
+    if (sectionTitle && !sectionTitle.querySelector('.loading-dots')) {
+        const dots = document.createElement('span');
+        dots.className = 'loading-dots';
+        dots.innerHTML = '<span></span><span></span><span></span>';
+        sectionTitle.appendChild(dots);
+    }
+}
+
+/**
+ * Removes loading overlays and indicators from the invoices section.
+ */
+function clearInvoicesLoading() {
+    // Remove overlay spinner
+    const loader = document.getElementById('invoices-loader');
+    if (loader) {
+        loader.classList.add('hidden');
+        setTimeout(() => loader.remove(), 400);
+    }
+
+    // Remove dots from title
+    const dots = document.querySelector('#invoices-section h2 .loading-dots');
+    if (dots) dots.remove();
+
+    // Reset container positioning
+    const container = document.querySelector('#invoices-section .data-table-container');
+    if (container) container.style.position = '';
 }
 
 export async function loadRealInvoicesTable() {
@@ -18,6 +78,7 @@ export async function loadRealInvoicesTable() {
     if (!tbody) return;
 
     if (Cache.isValid()) {
+        clearInvoicesLoading();
         renderInvoiceRows(Cache._data, tbody);
         return;
     }
@@ -26,9 +87,11 @@ export async function loadRealInvoicesTable() {
 
     try {
         const invoices = await Cache.fetch();
+        clearInvoicesLoading();
         renderInvoiceRows(invoices, tbody);
     } catch (error) {
         console.error('Error cargando tabla:', error);
+        clearInvoicesLoading();
         tbody.innerHTML = `
             <tr>
                 <td colspan="5" class="data-table-cell text-center">
@@ -98,8 +161,12 @@ export function renderInvoiceRows(invoices, tbody) {
     }
 
     const fragment = document.createDocumentFragment();
-    invoices.forEach(inv => {
-        fragment.appendChild(createInvoiceRow(inv));
+    invoices.forEach((inv, index) => {
+        const row = createInvoiceRow(inv);
+        // Add staggered entrance animation per row
+        row.style.opacity = '0';
+        row.style.animation = `slideUpFade 0.35s ease ${index * 0.04}s forwards`;
+        fragment.appendChild(row);
     });
 
     tbody.innerHTML = '';
