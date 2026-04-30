@@ -1,5 +1,6 @@
 import { fetchFXRates, Cache } from './api.js';
-import { initSidebar, handleRouting } from './ui/sidebar.js';
+import { initSidebar, handleRouting, showSection } from './ui/sidebar.js';
+import { filterInvoices } from './ui/invoices.js';
 import { initTheme } from './ui/theme.js';
 import { initUpload } from './ui/upload.js';
 import { initChat, initChatAutoUnlock, openSession } from './ui/chat.js';
@@ -43,6 +44,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             const newSessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
             openSession(newSessionId);
         });
+
+        // 7. Buscador: al pulsar → ir a Facturas, al escribir → filtrar tabla
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('focus', () => {
+                showSection('invoices');
+            });
+            searchInput.addEventListener('input', () => {
+                filterInvoices(searchInput.value);
+            });
+        }
 
     } catch (err) {
         console.error('❌ main.js: Error crítico durante la inicialización:', err);

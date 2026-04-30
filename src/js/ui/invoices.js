@@ -112,3 +112,22 @@ export async function previewInvoice(invoiceId) {
     const pdfUrl = `${REAL_API_URL}-preview?id=${invoiceId}`;
     previewContainer.innerHTML = `<iframe src="${pdfUrl}" class="w-full h-[500px] border-none rounded-lg" title="Factura ${invoiceId}"></iframe>`;
 }
+
+export function filterInvoices(query) {
+    const tbody = document.querySelector('#invoices-section tbody');
+    if (!tbody) return;
+
+    const rows = tbody.querySelectorAll('tr.data-table-row');
+    const normalizedQuery = query.toLowerCase().trim();
+
+    if (!normalizedQuery) {
+        // Sin búsqueda: mostrar todas
+        rows.forEach(row => row.style.display = '');
+        return;
+    }
+
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(normalizedQuery) ? '' : 'none';
+    });
+}
