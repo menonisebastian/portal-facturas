@@ -1,6 +1,7 @@
 import { N8N_UPLOAD_WEBHOOK_URL } from '../config.js';
-import { Cache } from '../api.js';
+import { Cache, apiFetch } from '../api.js';
 import { addNotification } from './notifications.js';
+import { validateFile, EventBus } from '../utils.js';
 
 export function initUpload() {
     const fileInput = document.getElementById('fileInput');
@@ -11,22 +12,38 @@ export function initUpload() {
     if (fileInput) {
         fileInput.addEventListener('change', () => {
             const file = fileInput.files[0];
-            if (file) {
-                fileNameDisplay.textContent = `Archivo seleccionado: ${file.name}`;
-                fileInfoContainer.classList.remove('hidden');
-
-                const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
-                if (previewContainer) {
-                    const fileURL = URL.createObjectURL(file);
-                    previewContainer.innerHTML = `
-                        <div class="absolute top-4 right-4 z-10 flex gap-2">
-                             <div class="px-3 py-1 bg-slate-800/90 backdrop-blur rounded-lg text-[10px] font-bold text-white uppercase tracking-widest">Documento Original</div>
-                        </div>
-                        <iframe src="${fileURL}#toolbar=0" class="w-full h-[500px] border-none rounded-lg shadow-inner" title="Vista previa local"></iframe>
-                    `;
-                }
-            } else {
+            if (!file) {
                 fileInfoContainer.classList.add('hidden');
+                return;
+            }
+
+            // ── Validar archivo al seleccionar ──
+            const validation = validateFile(file);
+            if (!validation.valid) {
+                fileInfoContainer.classList.remove('hidden');
+                fileNameDisplay.textContent = `⚠️ ${validation.error}`;
+                fileNameDisplay.classList.add('text-red-500');
+                fileNameDisplay.classList.remove('text-primary', 'dark:text-[#bfc2ff]');
+                fileInput.value = ''; // Limpiar selección inválida
+                return;
+            }
+
+            // Archivo válido
+            fileNameDisplay.classList.remove('text-red-500');
+            fileNameDisplay.classList.add('text-primary', 'dark:text-[#bfc2ff]');
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+            fileNameDisplay.textContent = `${file.name} (${sizeMB} MB)`;
+            fileInfoContainer.classList.remove('hidden');
+
+            const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
+            if (previewContainer) {
+                const fileURL = URL.createObjectURL(file);
+                previewContainer.innerHTML = `
+                    <div class="absolute top-4 right-4 z-10 flex gap-2">
+                         <div class="px-3 py-1 bg-slate-800/90 backdrop-blur rounded-lg text-[10px] font-bold text-white uppercase tracking-widest">Documento Original</div>
+                    </div>
+                    <iframe src="${fileURL}#toolbar=0" class="w-full h-[500px] border-none rounded-lg shadow-inner" title="Vista previa local"></iframe>
+                `;
             }
         });
     }
@@ -47,6 +64,15 @@ export function initUpload() {
             
             const file = fileInput.files[0];
             if (!file) return;
+
+            // ── Validación pre-envío ──
+            const validation = validateFile(file);
+            if (!validation.valid) {
+                fileNameDisplay.textContent = `⚠️ ${validation.error}`;
+                fileNameDisplay.classList.add('text-red-500');
+                fileInfoContainer.classList.remove('hidden');
+                return;
+            }
 
             const formData = new FormData();
             formData.append("attachment_0", file);
@@ -72,7 +98,7 @@ export function initUpload() {
             }
 
             try {
-                const response = await fetch(N8N_UPLOAD_WEBHOOK_URL, {
+                const response = await apiFetch(N8N_UPLOAD_WEBHOOK_URL, {
                     method: 'POST',
                     body: formData
                 });
@@ -139,8 +165,9 @@ export function initUpload() {
                     fileInfoContainer.classList.add('hidden');
                     Cache.invalidate();
 
-                    // Log success notification
+                    // Log notification + emit event
                     addNotification('success', file.name, result.mensaje || 'Factura procesada correctamente.');
+                    EventBus.emit('invoice:uploaded', { fileName: file.name, result });
                 } else {
                     throw new Error('El servidor no pudo procesar el archivo.');
                 }
@@ -153,8 +180,9 @@ export function initUpload() {
                 statusIconContainer.classList.add('bg-red-100', 'dark:bg-red-900/40');
                 statusIcon.classList.add('text-red-600', 'dark:text-red-400');
 
-                // Log error notification
+                // Log notification + emit event
                 addNotification('error', file.name, error.message);
+                EventBus.emit('invoice:uploadError', { fileName: file.name, error: error.message });
                 statusProgress.classList.remove('bg-primary', 'dark:bg-[#bfc2ff]');
                 statusProgress.classList.add('bg-red-500');
                 

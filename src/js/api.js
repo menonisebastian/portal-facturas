@@ -1,5 +1,56 @@
-import { REAL_API_URL, CACHE_TTL_MS } from './config.js';
-import { FX_TO_EUR } from './utils.js';
+import { REAL_API_URL, CACHE_TTL_MS, SESSION_KEY } from './config.js';
+import { FX_TO_EUR, EventBus } from './utils.js';
+
+// ─────────────────────────────────────────────────────────────
+// Centralized Fetch Wrapper
+// Intercepta errores HTTP globales (401, 403, 5xx) y emite
+// eventos a través del EventBus para reacciones desacopladas.
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Wrapper around fetch with centralized error handling.
+ * - 401/403 → emits 'auth:expired' and redirects to /login
+ * - Network errors → throws with user-friendly message
+ * @param {string} url
+ * @param {RequestInit} [options]
+ * @returns {Promise<Response>}
+ */
+export async function apiFetch(url, options = {}) {
+    let response;
+
+    try {
+        response = await fetch(url, options);
+    } catch (networkError) {
+        // Network failure (offline, DNS, CORS, etc.)
+        throw new Error('Error de conexión. Verifica tu red e inténtalo de nuevo.');
+    }
+
+    // ── Auth errors → redirect to login ──
+    if (response.status === 401 || response.status === 403) {
+        console.warn(`⚠️ API ${response.status}: sesión inválida o expirada.`);
+        sessionStorage.removeItem(SESSION_KEY);
+        EventBus.emit('auth:expired', { status: response.status, url });
+        window.location.replace('/login');
+        // Throw to stop further processing in the caller
+        throw new Error('Sesión expirada. Redirigiendo al login...');
+    }
+
+    // ── Server errors (5xx) ──
+    if (response.status >= 500) {
+        throw new Error(`Error del servidor (HTTP ${response.status}). Inténtalo más tarde.`);
+    }
+
+    // ── Client errors (4xx, excl. 401/403) ──
+    if (!response.ok) {
+        throw new Error(`Error en la solicitud (HTTP ${response.status}).`);
+    }
+
+    return response;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Invoice Data Cache
+// ─────────────────────────────────────────────────────────────
 
 export const Cache = {
     _data: null,               
@@ -15,11 +66,8 @@ export const Cache = {
         if (this.isValid()) return this._data;            
         if (this._fetchPromise) return this._fetchPromise; 
 
-        this._fetchPromise = fetch(REAL_API_URL)
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.json();
-            })
+        this._fetchPromise = apiFetch(REAL_API_URL)
+            .then(res => res.json())
             .then(data => {
                 this._data = data;
                 this._timestamp = Date.now();
@@ -35,8 +83,13 @@ export const Cache = {
     invalidate() {
         this._data = null;
         this._timestamp = null;
+        EventBus.emit('cache:invalidated');
     }
 };
+
+// ─────────────────────────────────────────────────────────────
+// FX Rates
+// ─────────────────────────────────────────────────────────────
 
 export async function fetchFXRates() {
     try {

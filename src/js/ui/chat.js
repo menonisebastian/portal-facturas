@@ -1,4 +1,5 @@
 import { N8N_CHAT_WEBHOOK_URL, HISTORIAL_API_URL } from '../config.js';
+import { apiFetch } from '../api.js';
 
 // Dynamic import to avoid blocking the entire module chain if CDN fails
 let createChat = null;
@@ -167,8 +168,7 @@ export async function loadChatHistory() {
         </li>`;
 
     try {
-        const res = await fetch(HISTORIAL_API_URL);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const res = await apiFetch(HISTORIAL_API_URL);
         const sesiones = await res.json();
 
         if (!sesiones.length) {
