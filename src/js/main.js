@@ -1,46 +1,53 @@
-import { SESSION_KEY } from './config.js';
 import { fetchFXRates, Cache } from './api.js';
 import { initSidebar, handleRouting } from './ui/sidebar.js';
 import { initTheme } from './ui/theme.js';
 import { initUpload } from './ui/upload.js';
 import { initChat, initChatAutoUnlock, openSession } from './ui/chat.js';
 
-// --- 1. CONFIGURACIÓN ---
-// No bloqueamos la carga del módulo con errores, auth-guard.js ya protege el index.html.
+// --- INICIALIZACIÓN ---
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('✅ main.js: DOMContentLoaded');
 
-// --- 2. INICIALIZACIÓN ---
-document.addEventListener('DOMContentLoaded', () => {
-    // Inicializar componentes UI
-    initSidebar();
-    initTheme();
-    initUpload();
-    initChatAutoUnlock();
+    try {
+        // 1. Componentes críticos (navegación, tema, upload)
+        initSidebar();
+        initTheme();
+        initUpload();
+        console.log('✅ main.js: Sidebar, Theme, Upload inicializados');
 
-    // Determinar tema inicial
-    const initialTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-    initChat(initialTheme);
+        // 2. Enrutamiento
+        handleRouting();
+        console.log('✅ main.js: Routing configurado');
 
-    // Manejar enrutamiento inicial
-    handleRouting();
+        // 3. Chat (no-blocking - puede fallar sin afectar al resto)
+        initChatAutoUnlock();
+        const initialTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        initChat(initialTheme).catch(err => {
+            console.warn('⚠️ Chat no pudo inicializarse:', err);
+        });
 
-    // Carga de datos inicial en segundo plano
-    setTimeout(() => {
-        fetchFXRates();
-        Cache.fetch().catch(() => {});
-    }, 300);
+        // 4. Carga de datos en segundo plano
+        setTimeout(() => {
+            fetchFXRates();
+            Cache.fetch().catch(() => {});
+        }, 300);
 
-    // Listener para el botón de abrir chat global
-    document.getElementById('open-chat-btn')?.addEventListener('click', () => {
-        const chatToggle = document.querySelector('.chat-window-toggle');
-        if (chatToggle) chatToggle.click();
-    });
+        // 5. Listener para el botón de abrir chat global
+        document.getElementById('open-chat-btn')?.addEventListener('click', () => {
+            const chatToggle = document.querySelector('.chat-window-toggle');
+            if (chatToggle) chatToggle.click();
+        });
 
-    // Listener para nuevo chat
-    document.getElementById('btn-new-chat-assistant')?.addEventListener('click', () => {
-        const newSessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
-        openSession(newSessionId);
-    });
+        // 6. Listener para nuevo chat
+        document.getElementById('btn-new-chat-assistant')?.addEventListener('click', () => {
+            const newSessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
+            openSession(newSessionId);
+        });
+
+    } catch (err) {
+        console.error('❌ main.js: Error crítico durante la inicialización:', err);
+    }
 });
 
-// Exponer openSession globalmente si es necesario para el HTML (aunque lo ideal es usar listeners)
+// Exponer openSession globalmente
 window.openSession = openSession;

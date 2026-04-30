@@ -1,7 +1,27 @@
-import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.es.js';
 import { N8N_CHAT_WEBHOOK_URL, HISTORIAL_API_URL } from '../config.js';
 
-export function initChat(selectedTheme = 'light', isHistory = false) {
+// Dynamic import to avoid blocking the entire module chain if CDN fails
+let createChat = null;
+
+async function loadChatSDK() {
+    if (createChat) return createChat;
+    try {
+        const module = await import('https://cdn.jsdelivr.net/npm/@n8n/chat/chat.bundle.es.js');
+        createChat = module.createChat;
+        return createChat;
+    } catch (err) {
+        console.warn('⚠️ No se pudo cargar el SDK del chat:', err);
+        return null;
+    }
+}
+
+export async function initChat(selectedTheme = 'light', isHistory = false) {
+    const chatFn = await loadChatSDK();
+    if (!chatFn) {
+        console.warn('Chat SDK no disponible. Saltando inicialización del chat.');
+        return;
+    }
+
     // 1. Limpiar widget existente
     const existingChat = document.querySelector('div#n8n-chat') || document.querySelector('.n8n-chat-widget');
     if (existingChat) {
@@ -16,7 +36,7 @@ export function initChat(selectedTheme = 'light', isHistory = false) {
     }
 
     // 3. Crear el chat
-    createChat({
+    chatFn({
         webhookUrl: N8N_CHAT_WEBHOOK_URL,
         theme: selectedTheme,
         sessionId: sessionId,
@@ -41,7 +61,7 @@ export function initChat(selectedTheme = 'light', isHistory = false) {
         }
     });
 
-    // 3. Lógica secundaria (Errores y Botones Inyectados)
+    // 4. Lógica secundaria (Errores y Botones Inyectados)
     setTimeout(() => {
         const chatContainer = document.getElementById('n8n-chat');
         if (!chatContainer) return;
@@ -169,7 +189,7 @@ export async function loadChatHistory() {
 
             li.innerHTML = `
                 <button data-session-id="${s.session_id}" 
-                    class="chat-history-item session-btn w-full text-left p-3 rounded-xl hover:bg-primary-fixed/30 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-outline-variant/20 group">
+                    class="chat-history-item session-btn w-full text-left p-3 rounded-xl group">
                     <div class="flex items-start gap-3">
                         <span class="material-symbols-outlined text-primary dark:text-[#bfc2ff] mt-0.5 flex-shrink-0" style="font-size:18px">chat</span>
                         <div class="min-w-0">

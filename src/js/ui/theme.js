@@ -15,7 +15,10 @@ export function initTheme() {
             if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
             if (themeText) themeText.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
             
-            initChat(newTheme);
+            // Reiniciar el chat con el nuevo tema (async, no bloquea)
+            initChat(newTheme).catch(err => {
+                console.warn('⚠️ No se pudo reiniciar el chat con el nuevo tema:', err);
+            });
         });
     }
 }

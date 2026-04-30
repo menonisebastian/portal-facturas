@@ -1,4 +1,5 @@
-import { Cache, REAL_API_URL } from '../api.js';
+import { Cache } from '../api.js';
+import { REAL_API_URL } from '../config.js';
 import { excelToJSDate, parseAmount, toEUR } from '../utils.js';
 
 export function renderTableSkeleton(tbody) {
