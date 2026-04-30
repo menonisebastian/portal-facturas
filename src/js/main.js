@@ -4,6 +4,7 @@ import { filterInvoices } from './ui/invoices.js';
 import { initTheme } from './ui/theme.js';
 import { initUpload } from './ui/upload.js';
 import { initChat, initChatAutoUnlock, openSession } from './ui/chat.js';
+import { initNotifications } from './ui/notifications.js';
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -14,7 +15,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         initSidebar();
         initTheme();
         initUpload();
-        console.log('✅ main.js: Sidebar, Theme, Upload inicializados');
+        initNotifications();
+        console.log('✅ main.js: Sidebar, Theme, Upload, Notifications inicializados');
 
         // 2. Enrutamiento
         handleRouting();

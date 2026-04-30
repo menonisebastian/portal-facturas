@@ -89,10 +89,26 @@
         </div>
         <div class="header-actions">
             <div class="flex items-center gap-2 lg:gap-4">
-                <button class="p-2 hover:text-primary dark:hover:text-[#bfc2ff] transition-all relative">
-                    <span class="material-symbols-outlined">notifications</span>
-                    <span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-white dark:border-slate-900"></span>
-                </button>
+                <!-- Notifications -->
+                <div class="relative">
+                    <button id="notif-btn" class="p-2 hover:text-primary dark:hover:text-[#bfc2ff] transition-all relative" aria-label="Notificaciones">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span id="notif-badge" class="notif-badge hidden">0</span>
+                    </button>
+
+                    <!-- Notifications Dropdown Panel -->
+                    <div id="notif-panel" class="notif-panel hidden">
+                        <div class="notif-panel-header">
+                            <h3 class="font-bold text-sm dark:text-white">Notificaciones</h3>
+                            <button id="notif-clear-btn" class="text-[10px] font-semibold text-primary dark:text-[#bfc2ff] hover:underline">
+                                Limpiar todo
+                            </button>
+                        </div>
+                        <div id="notif-list" class="notif-list custom-scrollbar">
+                            <!-- Rendered by notifications.js -->
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/30 hidden sm:block">
                 <img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4oGkxwVXHu0o9kcLxR3eR1WDaqo28ouznJyuUosRGv7FSrsTVnJ72S-Gy6H-DZi0yd8awAjpmHZpf2cBs4NMnF_Mbdg3mvJrC-vVWF38YGs-H5WDy8RHPd0IrXZqVY1n_Qd77SGSYSHbj04nUkw7pr0MEII3fexbw9MP9nUYz2KLQBTCFlUt7yBbMHXkHsUMJGq9vktzZcIYiR1zdI7YjLORRpvDFBECEUkGFD3PrkPldA0GB5dbkbNVo1abjVp3xkEjsj7fKB0Y"/>

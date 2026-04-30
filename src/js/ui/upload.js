@@ -1,5 +1,6 @@
 import { N8N_UPLOAD_WEBHOOK_URL } from '../config.js';
 import { Cache } from '../api.js';
+import { addNotification } from './notifications.js';
 
 export function initUpload() {
     const fileInput = document.getElementById('fileInput');
@@ -137,6 +138,9 @@ export function initUpload() {
                     fileInput.value = ''; 
                     fileInfoContainer.classList.add('hidden');
                     Cache.invalidate();
+
+                    // Log success notification
+                    addNotification('success', file.name, result.mensaje || 'Factura procesada correctamente.');
                 } else {
                     throw new Error('El servidor no pudo procesar el archivo.');
                 }
@@ -148,6 +152,9 @@ export function initUpload() {
                 statusIconContainer.classList.remove('bg-secondary-fixed', 'dark:bg-slate-700');
                 statusIconContainer.classList.add('bg-red-100', 'dark:bg-red-900/40');
                 statusIcon.classList.add('text-red-600', 'dark:text-red-400');
+
+                // Log error notification
+                addNotification('error', file.name, error.message);
                 statusProgress.classList.remove('bg-primary', 'dark:bg-[#bfc2ff]');
                 statusProgress.classList.add('bg-red-500');
                 
