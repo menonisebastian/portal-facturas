@@ -10,11 +10,11 @@ export function initTheme() {
             const isDark = document.documentElement.classList.toggle('dark');
             const newTheme = isDark ? 'dark' : 'light';
             
-            // Actualizar UI del botón
+            localStorage.setItem('portal_theme', newTheme);
+            
             if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
             if (themeText) themeText.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
             
-            // Reiniciar el chat con el nuevo tema visual
             initChat(newTheme);
         });
     }

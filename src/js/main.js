@@ -5,10 +5,8 @@ import { initTheme } from './ui/theme.js';
 import { initUpload } from './ui/upload.js';
 import { initChat, initChatAutoUnlock, openSession } from './ui/chat.js';
 
-// --- 1. PROTECCIÓN DE RUTA (SPA) ---
-if (!sessionStorage.getItem(SESSION_KEY)) {
-    throw new Error("Acceso no autorizado: Deteniendo ejecución de app.js");
-}
+// --- 1. CONFIGURACIÓN ---
+// No bloqueamos la carga del módulo con errores, auth-guard.js ya protege el index.html.
 
 // --- 2. INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {

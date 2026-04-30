@@ -3,11 +3,12 @@ import { loadRealInvoicesTable } from './invoices.js';
 import { loadRealDashboardData } from './dashboard.js';
 import { loadChatHistory } from './chat.js';
 
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('sidebar-overlay');
-const navItems = document.querySelectorAll('.nav-item');
+let sidebar, overlay, navItems;
 
 export function toggleSidebar(forceClose = false) {
+    if (!sidebar) sidebar = document.getElementById('sidebar');
+    if (!overlay) overlay = document.getElementById('sidebar-overlay');
+
     if (forceClose) {
         sidebar?.classList.remove('translate-x-0');
         overlay?.classList.remove('block');
@@ -19,6 +20,8 @@ export function toggleSidebar(forceClose = false) {
 }
 
 export function showSection(sectionId, updateHistory = true) {
+    if (!navItems) navItems = document.querySelectorAll('.nav-item');
+    
     // 1. Mostrar/ocultar secciones
     SECTIONS.forEach(id => {
         const section = document.getElementById(`${id}-section`);
@@ -61,6 +64,10 @@ export function handleRouting() {
 }
 
 export function initSidebar() {
+    sidebar = document.getElementById('sidebar');
+    overlay = document.getElementById('sidebar-overlay');
+    navItems = document.querySelectorAll('.nav-item');
+
     const burgerBtn = document.getElementById('hamburger-menu');
     const closeSidebarBtn = document.getElementById('close-sidebar');
     const logoutBtn = document.getElementById('logout-btn');
