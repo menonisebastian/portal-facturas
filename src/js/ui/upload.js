@@ -9,11 +9,13 @@ export function initUpload() {
     const fileInfoContainer = document.getElementById('file-info');
     const uploadForm = document.getElementById('uploadForm');
     const dropzone = document.querySelector('.upload-dropzone');
+    const changeFileBtn = document.getElementById('change-file-btn');
 
     // --- Función Helper para procesar el archivo seleccionado ---
     function handleFileSelection(file) {
         if (!file) {
             fileInfoContainer.classList.add('hidden');
+            fileInfoContainer.classList.remove('flex');
             return;
         }
 
@@ -34,6 +36,7 @@ export function initUpload() {
         const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
         fileNameDisplay.textContent = `${file.name} (${sizeMB} MB)`;
         fileInfoContainer.classList.remove('hidden');
+        fileInfoContainer.classList.add('flex');
 
         // Vista previa
         const previewContainer = document.querySelector('#upload-section .lg\\:col-span-5 div');
@@ -46,6 +49,14 @@ export function initUpload() {
                 <iframe src="${fileURL}#toolbar=0" class="w-full h-[500px] border-none rounded-lg shadow-inner" title="Vista previa local"></iframe>
             `;
         }
+    }
+
+    // --- Change File Button ---
+    if (changeFileBtn) {
+        changeFileBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            fileInput.click();
+        });
     }
 
     // --- Drag and Drop Listeners ---
