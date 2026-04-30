@@ -124,18 +124,20 @@ export function filterInvoices(query) {
         const text = row.textContent.toLowerCase();
         const matches = !normalizedQuery || text.includes(normalizedQuery);
 
-        if (matches) {
-            if (row.classList.contains('filtered-out')) {
-                row.classList.remove('filtered-out');
-                row.classList.add('filtered-in');
-                // Limpiar clase de animación después de que termine
-                row.addEventListener('animationend', () => {
-                    row.classList.remove('filtered-in');
-                }, { once: true });
-            }
-        } else {
-            row.classList.remove('filtered-in');
-            row.classList.add('filtered-out');
+        if (matches && row.style.display === 'none') {
+            // Mostrar: primero display, luego animar entrada
+            row.style.display = '';
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(8px)';
+            requestAnimationFrame(() => {
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            });
+        } else if (!matches && row.style.display !== 'none') {
+            // Ocultar: animar salida, luego display none
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(-8px)';
+            setTimeout(() => { row.style.display = 'none'; }, 250);
         }
     });
 }
