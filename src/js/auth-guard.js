@@ -9,7 +9,7 @@
 
 (function () {
     const SESSION_KEY = 'sp_portal_auth';
-    const LOGIN_PAGE  = '/login.html';
+    const LOGIN_PAGE  = '/login';
 
     function isAuthenticated() {
         try {
