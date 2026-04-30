@@ -57,6 +57,16 @@ function clearLoadingIndicator() {
     if (dots) dots.remove();
 }
 
+/**
+ * Sets the current month label (e.g. "Abril 2026") in the Volumen card.
+ */
+function setCurrentMonth(el) {
+    if (!el) return;
+    const fecha = new Date();
+    const nombreMes = fecha.toLocaleString('es-ES', { month: 'long' });
+    el.textContent = `${nombreMes.charAt(0).toUpperCase()}${nombreMes.slice(1)} ${fecha.getFullYear()}`;
+}
+
 export async function loadRealDashboardData() {
     const elProcesadas = document.getElementById('dash-procesadas');
     const elPendientes = document.getElementById('dash-pendientes');
@@ -64,14 +74,9 @@ export async function loadRealDashboardData() {
     const elMesActual  = document.getElementById('dash-mes-actual');
     if (!elProcesadas) return;
 
-    if (elMesActual) {
-        const fecha = new Date();
-        const nombreMes = fecha.toLocaleString('es-ES', { month: 'long' });
-        elMesActual.textContent = `${nombreMes.charAt(0).toUpperCase()}${nombreMes.slice(1)} ${fecha.getFullYear()}`;
-    }
-
     if (Cache.isValid()) {
         clearLoadingIndicator();
+        setCurrentMonth(elMesActual);
         renderDashboardStats(Cache._data, elProcesadas, elPendientes, elVolumen);
         animateStatCards();
         return;
@@ -82,11 +87,13 @@ export async function loadRealDashboardData() {
     try {
         const invoices = await Cache.fetch();
         clearLoadingIndicator();
+        setCurrentMonth(elMesActual);
         renderDashboardStats(invoices, elProcesadas, elPendientes, elVolumen);
         animateStatCards();
     } catch (error) {
         console.error('Error cargando Dashboard:', error);
         clearLoadingIndicator();
+        setCurrentMonth(elMesActual);
         [elProcesadas, elPendientes, elVolumen].forEach(el => {
             if (el) el.innerHTML = '<span class="text-base text-red-500">Error</span>';
         });
