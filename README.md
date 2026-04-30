@@ -1,45 +1,63 @@
 # 📊 Portal de Facturas | Sysprovider
 
-Un portal financiero de alto rendimiento para la gestión inteligente de facturación, diseñado con una arquitectura de **Single Page Application (SPA)** y potenciado por Inteligencia Artificial y automatización mediante **n8n**.
+Un portal financiero de alto rendimiento para la gestión inteligente de facturación, diseñado con una arquitectura de **Single Page Application (SPA)** modular y potenciado por Inteligencia Artificial y automatización mediante **n8n**.
 
 ![Stitch UI Design](https://img.shields.io/badge/Design-Stitch--UI-blue)
+![Architecture](https://img.shields.io/badge/Architecture-Modular_ESM-brightgreen)
 ![Responsive](https://img.shields.io/badge/Responsive-Mobile--Friendly-success)
 ![AI Powered](https://img.shields.io/badge/AI-Potenciado_por_IA-purple)
 ![Auth](https://img.shields.io/badge/Auth-Session--Guard-orange)
 
 ## ✨ Características Principales
 
-- **Diseño "Financial Architect"**: Interfaz premium basada en el sistema de diseño Stitch, con una estética limpia, profesional y moderna.
-- **Arquitectura SPA**: Navegación fluida entre secciones (Dashboard, Facturas, Subida, Asistente) sin recargas de página.
-- **🤖 Asistente AI (RAG)**: Integración profunda con **n8n** y **Qdrant** para consultas inteligentes sobre tus documentos en tiempo real.
-- **🚀 Subida Optimizada**: Motor de carga de facturas con validación y feedback visual de progreso mediante webhooks de n8n.
-- **📱 100% Responsivo**: Interfaz adaptativa con menú lateral tipo _drawer_ para una experiencia perfecta en móviles y tablets.
-- **🌓 Modo Oscuro Dinámico**: Sistema de temas nativo que se sincroniza con tus preferencias y ajusta incluso los widgets de terceros (n8n chat).
-- **🔗 URLs Limpias**: Sistema de rutas amigables (History API) para una navegación más profesional.
-- **🔐 Autenticación Segura**: Sistema de acceso mediante `auth-guard.js` que protege las rutas y gestiona sesiones persistentes con expiración automática.
-- **📈 Dashboard en Tiempo Real**: Visualización dinámica de estadísticas (facturas procesadas vs pendientes) y volumen de facturación mensual, sincronizado con n8n.
-- **🤖 Asistente AI Avanzado (RAG)**: Integración con el chat de **n8n** que permite consultas en lenguaje natural sobre documentos. Incluye:
-  - **Persistencia de Sesiones**: Recuperación de conversaciones previas.
-  - **Historial de Chats**: Interfaz para gestionar y retomar sesiones antiguas.
-  - **Starter Prompts**: Sugerencias inteligentes para agilizar consultas comunes.
-- **🚀 Subida con IA**: Motor de carga de facturas que utiliza IA para la extracción inmediata de metadatos (Proveedor, Base, IVA, Total) con feedback visual de progreso.
-- **📱 Interfaz Premium (Stitch UI)**: Diseño basado en "Financial Architect", 100% responsivo y adaptativo para móviles y tablets.
-- **🌓 Sincronización de Temas**: Modo oscuro nativo que se comunica bidireccionalmente con el asistente IA para una experiencia visual cohesiva.
+- **Arquitectura Modular (ESM)**: Código organizado en módulos JavaScript independientes (ES6) para facilitar el mantenimiento y la escalabilidad.
+- **Diseño "Financial Architect" (Stitch UI)**: Interfaz premium con una estética limpia, profesional y moderna, utilizando nombres de clases semánticos y descriptivos.
+- **Arquitectura SPA**: Navegación fluida entre secciones (Dashboard, Facturas, Subida, Asistente) sin recargas de página mediante History API.
+- **🤖 Asistente AI (RAG)**: Integración profunda con **n8n** y **Qdrant** para consultas inteligentes sobre documentos en tiempo real con persistencia de sesiones.
+- **🚀 Subida con IA**: Motor de carga de facturas que utiliza IA para la extracción inmediata de metadatos con feedback visual de progreso.
+- **📈 Dashboard Dinámico**: Visualización de estadísticas en tiempo real sincronizadas con n8n y OneDrive.
+- **🌓 Modo Oscuro Cohesivo**: Sistema de temas que se sincroniza con los widgets de terceros para una experiencia visual unificada.
+- **🔐 Seguridad Multi-capa**: Protección de rutas mediante `auth-guard.js` y gestión de sesiones seguras.
 
 ## 🛠️ Stack Tecnológico
 
-- **Frontend**: HTML5, Vanilla JavaScript (ESM).
-
-- **Estilos**: Tailwind CSS, CSS Custom Properties, Material Symbols Outlined.
-- **Autenticación**: `sessionStorage` + Guard síncrono.
+- **Frontend**: HTML5, Vanilla JavaScript (ES Modules).
+- **Estilos**: Tailwind CSS (Configuration modular), CSS Moderno (Semantic Classes).
 - **Automatización & IA**:
-  - **n8n**: Orquestación de webhooks, extracción de datos y chat inteligente.
-  - **Qdrant**: Base de datos vectorial para el motor RAG.
-- **Almacenamiento**: Integración con OneDrive (Excel y PDFs).
+  - **n8n**: Orquestación de flujos de trabajo y AI Agent.
+  - **Qdrant**: Base de datos vectorial para RAG.
+- **Infraestructura**: Integración con OneDrive y Excel via webhooks.
 
-## 🚀 Integración con n8n (Endpoints)
+## 🚀 Estructura del Proyecto
 
-El portal utiliza los siguientes webhooks para comunicarse con la infraestructura de automatización:
+El proyecto sigue una organización moderna y escalable:
+
+```text
+.
+├── assets/                  # Recursos visuales y logos
+├── src/
+│   ├── css/                 # Estilos organizados por componentes
+│   │   ├── style.css        # Clases semánticas y tokens globales
+│   │   └── login.css        # Estilos específicos de acceso
+│   └── js/                  # Lógica modular
+│       ├── ui/              # Componentes de interfaz
+│       │   ├── chat.js      # Lógica del asistente AI
+│       │   ├── dashboard.js # Renderizado de estadísticas
+│       │   ├── invoices.js  # Gestión de tablas y facturas
+│       │   ├── sidebar.js   # Navegación y routing
+│       │   ├── theme.js     # Gestión de modo oscuro
+│       │   └── upload.js    # Lógica de procesamiento de archivos
+│       ├── api.js           # Comunicación con webhooks y Cache
+│       ├── auth-guard.js    # Guardia de seguridad de rutas
+│       ├── config.js        # Configuración centralizada (URLs n8n)
+│       ├── tailwind-config.js # Configuración de diseño y tokens
+│       ├── main.js          # Punto de entrada de la aplicación
+│       └── utils.js         # Funciones de utilidad y formateo
+├── index.html               # Contenedor principal de la SPA
+└── login.html               # Página de acceso seguro
+```
+
+## 🚀 Integración con n8n
 
 | Funcionalidad             | Método | URL del Webhook                   |
 | :------------------------ | :----- | :-------------------------------- |
@@ -47,27 +65,6 @@ El portal utiliza los siguientes webhooks para comunicarse con la infraestructur
 | **Subida de Facturas**    | `POST` | `.../webhook/subir-factura`       |
 | **Asistente (Chat)**      | `POST` | `.../webhook/.../chat`            |
 | **Historial de Chats**    | `GET`  | `.../webhook/api-historial-chats` |
-
-### Configuración de Servidor (SPA)
-
-Para evitar errores 404 al recargar rutas internas en producción (ej: `/invoices`), configura el fallback en Nginx:
-
-```nginx
-location / {
-    root /usr/share/nginx/html;
-    index index.html;
-    try_files $uri $uri/ /index.html;
-}
-```
-
-## 📂 Estructura del Proyecto
-
-- `index.html`: Punto de entrada principal y estructura de la SPA.
-- `login.html`: Interfaz de acceso al portal.
-- `auth-guard.js`: Lógica de seguridad y protección de rutas (ejecución síncrona).
-- `app.js`: Cerebro de la aplicación, gestión de rutas, temas e integraciones con n8n.
-- `style.css`: Tokens de diseño, personalización del chat y utilidades CSS.
-- `logosys.png` / `LOGO_SYSPROVIDER_DEGRADADO.svg`: Activos de marca.
 
 ---
 
