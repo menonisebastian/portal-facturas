@@ -465,6 +465,38 @@
     padding: 1rem 1.5rem;
 }
 
+/* Search filter animations */
+.data-table-row {
+    transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease;
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 200px;
+    overflow: hidden;
+}
+
+.data-table-row.filtered-out {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.data-table-row.filtered-in {
+    animation: filterIn 0.35s ease forwards;
+}
+
+@keyframes filterIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 :root {
     --primary: #030086;
     --primary-container: #1111bb;

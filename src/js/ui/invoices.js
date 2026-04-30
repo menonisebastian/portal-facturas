@@ -120,14 +120,22 @@ export function filterInvoices(query) {
     const rows = tbody.querySelectorAll('tr.data-table-row');
     const normalizedQuery = query.toLowerCase().trim();
 
-    if (!normalizedQuery) {
-        // Sin búsqueda: mostrar todas
-        rows.forEach(row => row.style.display = '');
-        return;
-    }
-
     rows.forEach(row => {
         const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(normalizedQuery) ? '' : 'none';
+        const matches = !normalizedQuery || text.includes(normalizedQuery);
+
+        if (matches) {
+            if (row.classList.contains('filtered-out')) {
+                row.classList.remove('filtered-out');
+                row.classList.add('filtered-in');
+                // Limpiar clase de animación después de que termine
+                row.addEventListener('animationend', () => {
+                    row.classList.remove('filtered-in');
+                }, { once: true });
+            }
+        } else {
+            row.classList.remove('filtered-in');
+            row.classList.add('filtered-out');
+        }
     });
 }
