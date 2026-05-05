@@ -3,8 +3,6 @@ import { FX_TO_EUR, EventBus } from './utils.js';
 
 // ─────────────────────────────────────────────────────────────
 // Centralized Fetch Wrapper
-// Intercepta errores HTTP globales (401, 403, 5xx) y emite
-// eventos a través del EventBus para reacciones desacopladas.
 // ─────────────────────────────────────────────────────────────
 
 /**
@@ -21,26 +19,21 @@ export async function apiFetch(url, options = {}) {
     try {
         response = await fetch(url, options);
     } catch (networkError) {
-        // Network failure (offline, DNS, CORS, etc.)
         throw new Error('Error de conexión. Verifica tu red e inténtalo de nuevo.');
     }
 
-    // ── Auth errors → redirect to login ──
     if (response.status === 401 || response.status === 403) {
         console.warn(`⚠️ API ${response.status}: sesión inválida o expirada.`);
         sessionStorage.removeItem(SESSION_KEY);
         EventBus.emit('auth:expired', { status: response.status, url });
         window.location.replace('/login');
-        // Throw to stop further processing in the caller
         throw new Error('Sesión expirada. Redirigiendo al login...');
     }
 
-    // ── Server errors (5xx) ──
     if (response.status >= 500) {
         throw new Error(`Error del servidor (HTTP ${response.status}). Inténtalo más tarde.`);
     }
 
-    // ── Client errors (4xx, excl. 401/403) ──
     if (!response.ok) {
         throw new Error(`Error en la solicitud (HTTP ${response.status}).`);
     }
@@ -49,42 +42,81 @@ export async function apiFetch(url, options = {}) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Invoice Data Cache
+// Invoice Data Cache — por mes (yyyy-MM)
 // ─────────────────────────────────────────────────────────────
 
 export const Cache = {
-    _data: null,               
-    _fetchPromise: null,       
-    _timestamp: null,
-    TTL_MS: CACHE_TTL_MS,    
+    _data: {},          // { 'yyyy-MM': [...] }
+    _promises: {},      // promesas en vuelo por mes
+    _timestamps: {},    // timestamps por mes
+    TTL_MS: CACHE_TTL_MS,
 
-    isValid() {
-        return this._data && this._timestamp && (Date.now() - this._timestamp < this.TTL_MS);
+    /**
+     * Devuelve el mes actual como 'yyyy-MM' si no se pasa argumento.
+     */
+    _currentMonth() {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     },
 
-    async fetch() {
-        if (this.isValid()) return this._data;            
-        if (this._fetchPromise) return this._fetchPromise; 
+    isValid(month) {
+        const m = month || this._currentMonth();
+        return !!(this._data[m] && this._timestamps[m] && (Date.now() - this._timestamps[m] < this.TTL_MS));
+    },
 
-        this._fetchPromise = apiFetch(REAL_API_URL)
+    getData(month) {
+        return this._data[month || this._currentMonth()] || null;
+    },
+
+    /**
+     * Fetches invoice data for the given month (yyyy-MM).
+     * Deduplicates concurrent requests for the same month.
+     * @param {string} [month] - defaults to current month
+     * @returns {Promise<Array>}
+     */
+    async fetch(month) {
+        const m = month || this._currentMonth();
+
+        if (this.isValid(m)) return this._data[m];
+        if (this._promises[m]) return this._promises[m];
+
+        const url = `${REAL_API_URL}?mes=${m}`;
+
+        this._promises[m] = apiFetch(url)
             .then(res => res.json())
             .then(data => {
-                this._data = data;
-                this._timestamp = Date.now();
-                return data;
+                // Si el servidor devuelve error o array vacío, tratar como vacío
+                if (!data || data.error) return [];
+                const arr = Array.isArray(data) ? data : [];
+                this._data[m] = arr;
+                this._timestamps[m] = Date.now();
+                return arr;
+            })
+            .catch(err => {
+                console.warn(`⚠️ Error cargando facturas de ${m}:`, err.message);
+                throw err;
             })
             .finally(() => {
-                this._fetchPromise = null; 
+                delete this._promises[m];
             });
 
-        return this._fetchPromise;
+        return this._promises[m];
     },
 
-    invalidate() {
-        this._data = null;
-        this._timestamp = null;
-        EventBus.emit('cache:invalidated');
-    }
+    /**
+     * Invalida la caché de un mes concreto o de todos los meses.
+     * @param {string|null} [month]
+     */
+    invalidate(month = null) {
+        if (month) {
+            delete this._data[month];
+            delete this._timestamps[month];
+        } else {
+            this._data = {};
+            this._timestamps = {};
+        }
+        EventBus.emit('cache:invalidated', { month });
+    },
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -96,11 +128,10 @@ export async function fetchFXRates() {
         const res = await fetch('https://api.frankfurter.app/latest?base=EUR');
         if (!res.ok) throw new Error('Error al obtener tasas');
         const data = await res.json();
-        // data.rates = { USD: 1.09, GBP: 0.86, ... } → invertir a "cuántos EUR vale 1 unidad"
         Object.entries(data.rates).forEach(([code, rate]) => {
             FX_TO_EUR[code] = 1 / rate;
         });
-        Cache.invalidate(); // ← Forzar recálculo con tipos reales
+        Cache.invalidate();
         console.log('✅ Tasas de cambio actualizadas:', new Date().toLocaleTimeString());
     } catch (err) {
         console.warn('⚠️ No se pudieron actualizar las tasas. Usando valores de fallback.', err);
