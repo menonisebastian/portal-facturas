@@ -31,11 +31,15 @@ export async function apiFetch(url, options = {}) {
     }
 
     if (response.status >= 500) {
-        throw new Error(`Error del servidor (HTTP ${response.status}). Inténtalo más tarde.`);
+        const err = new Error(`Error del servidor (HTTP ${response.status}). Inténtalo más tarde.`);
+        err.status = response.status;
+        throw err;
     }
 
     if (!response.ok) {
-        throw new Error(`Error en la solicitud (HTTP ${response.status}).`);
+        const err = new Error(`Error en la solicitud (HTTP ${response.status}).`);
+        err.status = response.status;
+        throw err;
     }
 
     return response;
@@ -80,14 +84,27 @@ export const Cache = {
         if (this.isValid(m)) return this._data[m];
         if (this._promises[m]) return this._promises[m];
 
-        const url = `${REAL_API_URL}?mes=${m}`;
+        const urlWithMonth = `${REAL_API_URL}?mes=${encodeURIComponent(m)}`;
+        const fetchInvoices = async (url) => {
+            const res = await apiFetch(url);
+            const data = await res.json();
+            if (!data || data.error) return [];
+            return Array.isArray(data) ? data : [];
+        };
+        const shouldFallbackToUnfiltered = (err) => {
+            const status = Number(err?.status);
+            return [400, 404, 405, 422].includes(status);
+        };
 
-        this._promises[m] = apiFetch(url)
-            .then(res => res.json())
-            .then(data => {
-                // Si el servidor devuelve error o array vacío, tratar como vacío
-                if (!data || data.error) return [];
-                const arr = Array.isArray(data) ? data : [];
+        this._promises[m] = fetchInvoices(urlWithMonth)
+            .catch(async (err) => {
+                if (!shouldFallbackToUnfiltered(err)) {
+                    throw err;
+                }
+                console.warn(`⚠️ Filtro mensual no soportado para ${m}. Reintentando sin parámetro mes.`);
+                return fetchInvoices(REAL_API_URL);
+            })
+            .then(arr => {
                 this._data[m] = arr;
                 this._timestamps[m] = Date.now();
                 return arr;

@@ -15,7 +15,7 @@ let selectedMonth = (() => {
  */
 export function buildMonthSelector() {
     const section = document.getElementById('invoices-section');
-    if (!section || document.getElementById('month-selector-wrapper')) return;
+    if (!section) return;
 
     const now = new Date();
 
@@ -29,11 +29,7 @@ export function buildMonthSelector() {
         options.push({ value, label: cap });
     }
 
-    const wrapper = document.createElement('div');
-    wrapper.id = 'month-selector-wrapper';
-    wrapper.className = 'flex flex-wrap items-center justify-between gap-4 mb-6';
-
-    wrapper.innerHTML = `
+    const selectorMarkup = `
         <div class="flex items-center gap-3">
             <label for="month-selector" class="text-xs font-bold uppercase tracking-widest text-on-surface-variant dark:text-slate-400 whitespace-nowrap">
                 Mes de subida
@@ -55,16 +51,33 @@ export function buildMonthSelector() {
             class="px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest bg-primary-fixed dark:bg-[#bfc2ff]/10 text-primary dark:text-[#bfc2ff]">
         </div>`;
 
+    let wrapper = document.getElementById('month-selector-wrapper');
+    const needsRebuild = wrapper && !wrapper.querySelector('#month-selector');
+    if (needsRebuild) {
+        wrapper.remove();
+        wrapper = null;
+    }
+
+    if (!wrapper) {
+        wrapper = document.createElement('div');
+        wrapper.id = 'month-selector-wrapper';
+        wrapper.className = 'flex flex-wrap items-center justify-between gap-4 mb-6';
+        wrapper.innerHTML = selectorMarkup;
+    } else {
+        // Mantener opciones actualizadas al reabrir sección tras cambio de mes/año.
+        wrapper.innerHTML = selectorMarkup;
+    }
+
     // Insertar antes de la tabla
     const tableContainer = section.querySelector('.data-table-container');
-    if (tableContainer) {
+    if (tableContainer && wrapper.nextElementSibling !== tableContainer) {
         section.insertBefore(wrapper, tableContainer);
-    } else {
+    } else if (!tableContainer && !section.contains(wrapper)) {
         section.appendChild(wrapper);
     }
 
     // Listener
-    wrapper.querySelector('#month-selector').addEventListener('change', (e) => {
+    wrapper.querySelector('#month-selector')?.addEventListener('change', (e) => {
         selectedMonth = e.target.value;
         Cache.invalidate(selectedMonth);
         loadRealInvoicesTable();

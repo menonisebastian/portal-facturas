@@ -1,4 +1,4 @@
-import { fetchFXRates, Cache } from './api.js';
+import { fetchFXRates } from './api.js';
 import { initSidebar, handleRouting, showSection } from './ui/sidebar.js';
 import { filterInvoices } from './ui/invoices.js';
 import { initTheme } from './ui/theme.js';
@@ -31,8 +31,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 4. Carga de datos en segundo plano
         setTimeout(() => {
+            // Solo precargar tasas. Las facturas se cargan bajo demanda
+            // al abrir cada sección para evitar fallos de arranque.
             fetchFXRates();
-            Cache.fetch().catch(() => {});
         }, 300);
 
         // 5. Listener para el botón de abrir chat global
