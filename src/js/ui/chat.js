@@ -35,6 +35,19 @@ async function ensureChatWindowOpen() {
     if (!isOpen) chatToggle.click();
 }
 
+function generateSessionId() {
+    return crypto.randomUUID
+        ? crypto.randomUUID()
+        : Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+function persistSessionId(sessionId) {
+    // Keep all known keys in sync because @n8n/chat may read its internal key.
+    localStorage.setItem('sessionId', sessionId);
+    localStorage.setItem('n8n_chat_sessionId', sessionId);
+    localStorage.setItem('n8n-chat/sessionId', sessionId);
+}
+
 export async function initChat(selectedTheme = 'light', isHistory = false) {
     const chatFn = await loadChatSDK();
     if (!chatFn) {
@@ -49,12 +62,12 @@ export async function initChat(selectedTheme = 'light', isHistory = false) {
     }
 
     // 2. Recuperar o crear sessionId persistente
-    let sessionId = localStorage.getItem('sessionId') || localStorage.getItem('n8n_chat_sessionId');
-    if (!sessionId) {
-        sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
-    }
-    localStorage.setItem('sessionId', sessionId);
-    localStorage.setItem('n8n_chat_sessionId', sessionId);
+    const storedSessionId =
+        localStorage.getItem('sessionId') ||
+        localStorage.getItem('n8n_chat_sessionId') ||
+        localStorage.getItem('n8n-chat/sessionId');
+    const sessionId = isHistory ? (storedSessionId || generateSessionId()) : generateSessionId();
+    persistSessionId(sessionId);
 
     // 3. Crear el chat
     const initialMessages = isHistory
@@ -66,6 +79,13 @@ export async function initChat(selectedTheme = 'light', isHistory = false) {
 
     chatFn({
         webhookUrl: N8N_CHAT_WEBHOOK_URL,
+        metadata: {},
+        webhookConfig: {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        },
         chatSessionKey: 'sessionId',
         loadPreviousSession: true,
         theme: selectedTheme,
@@ -244,19 +264,15 @@ export async function loadChatHistory() {
 }
 
 export async function openSession(sessionId) {
-    localStorage.setItem('sessionId', sessionId);
-    localStorage.setItem('n8n_chat_sessionId', sessionId);
+    persistSessionId(sessionId);
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     await initChat(theme, true);
     await ensureChatWindowOpen();
 }
 
 export async function startNewSession() {
-    const newSessionId = crypto.randomUUID
-        ? crypto.randomUUID()
-        : Date.now().toString(36) + Math.random().toString(36).substr(2);
-    localStorage.setItem('sessionId', newSessionId);
-    localStorage.setItem('n8n_chat_sessionId', newSessionId);
+    const newSessionId = generateSessionId();
+    persistSessionId(newSessionId);
 
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     await initChat(theme, false);
