@@ -3,7 +3,7 @@ import { initSidebar, handleRouting, showSection } from './ui/sidebar.js';
 import { filterInvoices } from './ui/invoices.js';
 import { initTheme } from './ui/theme.js';
 import { initUpload } from './ui/upload.js';
-import { initChat, initChatAutoUnlock, openSession } from './ui/chat.js';
+import { initChat, initChatAutoUnlock, openSession, startNewSession } from './ui/chat.js';
 import { initNotifications } from './ui/notifications.js';
 
 // --- INICIALIZACIÓN ---
@@ -43,9 +43,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         // 6. Listener para nuevo chat
-        document.getElementById('btn-new-chat-assistant')?.addEventListener('click', () => {
-            const newSessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
-            openSession(newSessionId);
+        document.getElementById('btn-new-chat-assistant')?.addEventListener('click', async () => {
+            await startNewSession();
         });
 
         // 7. Buscador: al pulsar → ir a Facturas, al escribir → filtrar tabla

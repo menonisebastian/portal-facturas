@@ -16,6 +16,25 @@ async function loadChatSDK() {
     }
 }
 
+async function waitForElement(selector, timeoutMs = 3000) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+        const el = document.querySelector(selector);
+        if (el) return el;
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return null;
+}
+
+async function ensureChatWindowOpen() {
+    const chatToggle = await waitForElement('.chat-window-toggle');
+    if (!chatToggle) return;
+
+    const chatWindow = document.querySelector('.chat-window');
+    const isOpen = !!(chatWindow && chatWindow.offsetParent !== null && !chatWindow.classList.contains('hidden'));
+    if (!isOpen) chatToggle.click();
+}
+
 export async function initChat(selectedTheme = 'light', isHistory = false) {
     const chatFn = await loadChatSDK();
     if (!chatFn) {
@@ -205,9 +224,9 @@ export async function loadChatHistory() {
 
         // Add event listeners to session buttons
         ul.querySelectorAll('.session-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const sessionId = btn.getAttribute('data-session-id');
-                openSession(sessionId);
+                await openSession(sessionId);
             });
         });
 
@@ -217,13 +236,22 @@ export async function loadChatHistory() {
     }
 }
 
-export function openSession(sessionId) {
+export async function openSession(sessionId) {
     localStorage.setItem('n8n_chat_sessionId', sessionId);
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-    initChat(theme, true);
-    
-    const chatToggle = document.querySelector('.chat-window-toggle');
-    if (chatToggle) chatToggle.click();
+    await initChat(theme, true);
+    await ensureChatWindowOpen();
+}
+
+export async function startNewSession() {
+    const newSessionId = crypto.randomUUID
+        ? crypto.randomUUID()
+        : Date.now().toString(36) + Math.random().toString(36).substr(2);
+    localStorage.setItem('n8n_chat_sessionId', newSessionId);
+
+    const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    await initChat(theme, false);
+    await ensureChatWindowOpen();
 }
 
 export function initChatAutoUnlock() {
