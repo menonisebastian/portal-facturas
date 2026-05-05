@@ -49,11 +49,12 @@ export async function initChat(selectedTheme = 'light', isHistory = false) {
     }
 
     // 2. Recuperar o crear sessionId persistente
-    let sessionId = localStorage.getItem('n8n_chat_sessionId');
+    let sessionId = localStorage.getItem('sessionId') || localStorage.getItem('n8n_chat_sessionId');
     if (!sessionId) {
         sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
-        localStorage.setItem('n8n_chat_sessionId', sessionId);
     }
+    localStorage.setItem('sessionId', sessionId);
+    localStorage.setItem('n8n_chat_sessionId', sessionId);
 
     // 3. Crear el chat
     const initialMessages = isHistory
@@ -65,7 +66,7 @@ export async function initChat(selectedTheme = 'light', isHistory = false) {
 
     chatFn({
         webhookUrl: N8N_CHAT_WEBHOOK_URL,
-        chatSessionKey: 'n8n_chat_sessionId',
+        chatSessionKey: 'sessionId',
         loadPreviousSession: true,
         theme: selectedTheme,
         sessionId: sessionId,
@@ -243,6 +244,7 @@ export async function loadChatHistory() {
 }
 
 export async function openSession(sessionId) {
+    localStorage.setItem('sessionId', sessionId);
     localStorage.setItem('n8n_chat_sessionId', sessionId);
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     await initChat(theme, true);
@@ -253,6 +255,7 @@ export async function startNewSession() {
     const newSessionId = crypto.randomUUID
         ? crypto.randomUUID()
         : Date.now().toString(36) + Math.random().toString(36).substr(2);
+    localStorage.setItem('sessionId', newSessionId);
     localStorage.setItem('n8n_chat_sessionId', newSessionId);
 
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
