@@ -1,0 +1,195 @@
+{
+  "name": "Historial de Chats del Asistente RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "/api-historial-chats",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "f6d35b6b-3ec7-4367-9795-4d403d639306",
+      "name": "Webhook",
+      "webhookId": "a222c850-e8c7-4666-83b4-bf5b2f50561b"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        400,
+        0
+      ],
+      "id": "8ce0b53a-354c-414b-9a6d-ae4de62d11d7",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "content": "## Endpoint de listados e historial de chat",
+        "height": 400,
+        "width": 868
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -256,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "81c395d6-8108-4c1d-b768-2c3f1d052486",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    session_id,\n    MIN(created_at) as fecha_inicio,\n    COUNT(*) as num_mensajes,\n    (SELECT message->>'content' \n     FROM historial_chats_ia h2 \n     WHERE h2.session_id = h.session_id \n     AND message->>'type' = 'human'\n     ORDER BY id ASC LIMIT 1) as primer_mensaje\nFROM historial_chats_ia h\nGROUP BY session_id\nORDER BY MIN(created_at) DESC\nLIMIT 20",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        192,
+        64
+      ],
+      "id": "bcde19e5-e455-4430-9817-9712cb4b95c5",
+      "name": "Query de Listado",
+      "credentials": {
+        "postgres": {
+          "id": "TCOwfYQ8ukfA9i8K",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    message->>'type' as type,\n    message->>'content' as content\nFROM historial_chats_ia\nWHERE session_id = '{{ $json.query.session_id }}'\nORDER BY id ASC",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        192,
+        -80
+      ],
+      "id": "bbc96cbd-8491-4d09-b31d-a7d36e2bd725",
+      "name": "Query de Chat",
+      "credentials": {
+        "postgres": {
+          "id": "TCOwfYQ8ukfA9i8K",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6bac229e-5a0f-4c59-a1e0-ea583536dfa7",
+              "leftValue": "={{ $json.query.session_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6017e650-e669-4197-9ee7-5c59171385b4",
+      "name": "Es Chat?"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Es Chat?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query de Listado": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query de Chat": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es Chat?": {
+      "main": [
+        [
+          {
+            "node": "Query de Chat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Query de Listado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e7c1f146-5049-4ae7-82d2-9ba6039f9f0d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fd7bb03de3de18538e054dd4028dfe2ce0a4a589855e64c11d68acde1df3e3b2"
+  },
+  "id": "mwQnSN42pp22rp7D",
+  "tags": []
+}

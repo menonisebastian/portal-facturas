@@ -1,0 +1,206 @@
+{
+  "name": "Asistente Financiero RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Eres un asistente financiero experto de Sysprovider. Tu trabajo principal \nes ayudar al usuario a consultar su registro de facturas.\n\nREGLAS OBLIGATORIAS:\n\n1. CLASIFICACIÓN DE PREGUNTAS:\n   - Si la pregunta es sobre facturas concretas, pagos, proveedores, importes \n     específicos, fechas, IVA, IRPF o datos de una factura en particular \n     → usa SIEMPRE Qdrant Vector Store para buscar.\n   - Si la pregunta es sobre TOTALES GLOBALES (cuántas facturas hay en total, \n     suma de todos los importes, estadísticas generales) → responde indicando \n     amablemente que esa información está disponible en el Dashboard del portal, \n     ya que Qdrant almacena facturas para búsqueda semántica, no para \n     estadísticas globales. NO uses Qdrant para este tipo de consultas.\n   - Si la pregunta es general (saludos, dudas conceptuales, preguntas sobre IA, \n     etc.) → responde con tu conocimiento sin usar Qdrant.\n\n2. Sé claro, conciso y profesional en todo momento.\n\n3. Para datos financieros específicos: responde ÚNICAMENTE con lo que encuentres \n   en la base de datos. NUNCA inventes cifras, fechas o proveedores.\n\n4. Muestra los importes siempre con su moneda (ej: 181.50 EUR).\n\n5. Si no encuentras resultados en Qdrant, responde con amabilidad que no \n   hay datos disponibles para esa consulta.\n\n6. Si ocurre un error técnico, responde: \"Lo siento, tengo un problema \n   técnico temporal. Por favor inténtalo de nuevo en unos minutos.\"\n   NUNCA muestres JSON ni mensajes de error al usuario.\n\n7. EJEMPLOS DE PREGUNTAS Y CÓMO RESPONDERLAS:\n   - \"¿Facturas de Telefónica?\" → usa Qdrant, busca por proveedor.\n   - \"¿Cuánto pagué en enero?\" → usa Qdrant, filtra por fecha.\n   - \"¿Cuántas facturas hay en total?\" → NO uses Qdrant. Indica que esa \n     estadística está en el Dashboard del portal.\n   - \"¿Cuál es el total de gastos?\" → NO uses Qdrant. Redirige al Dashboard."
+        }
+      },
+      "id": "f16b99f0-f4a5-4c27-8512-eccbd0691e66",
+      "name": "Asistente Financiero",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        368,
+        16
+      ],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "724f3326-b0e1-419f-9357-10f5bfaf1955",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        288,
+        240
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "T2v9sDYMlhSuTPLz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Busca información en el registro histórico de facturas. Úsala siempre que el usuario pregunte por pagos, proveedores, IRPF, fechas, importes o totales.",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "facturas",
+          "mode": "list",
+          "cachedResultName": "facturas"
+        },
+        "topK": 5,
+        "options": {}
+      },
+      "id": "ba556947-afe4-4bed-931c-f9183ab9426b",
+      "name": "Qdrant Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        240
+      ],
+      "credentials": {
+        "qdrantApi": {
+          "id": "8HasHPbSC3DOxalO",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "id": "d5de9133-602a-42b4-9b22-551751237282",
+      "name": "Embeddings Google Gemini",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        576,
+        416
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "T2v9sDYMlhSuTPLz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Prueba de mensaje",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        192,
+        16
+      ],
+      "id": "2f3647be-ed57-4d97-9132-80e591e4f7ba",
+      "name": "Chat Trigger",
+      "webhookId": "a8d485bd-7592-47c6-8364-a483d80ddbc2"
+    },
+    {
+      "parameters": {
+        "tableName": "historial_chats_ia"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        432,
+        240
+      ],
+      "id": "d952725b-9a15-439e-b817-11ee19ba4efd",
+      "name": "Postgres Chat Memory1",
+      "credentials": {
+        "postgres": {
+          "id": "TCOwfYQ8ukfA9i8K",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Asistente Financiero",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Asistente Financiero",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Asistente Financiero",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asistente Financiero": {
+      "main": [
+        [],
+        []
+      ]
+    },
+    "Postgres Chat Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Asistente Financiero",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Europe/Madrid",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "1b671174-5998-464a-9dd6-11071aa1cbac",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fd7bb03de3de18538e054dd4028dfe2ce0a4a589855e64c11d68acde1df3e3b2"
+  },
+  "id": "culGyQl8s80fgBHA",
+  "tags": []
+}

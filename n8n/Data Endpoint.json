@@ -1,0 +1,457 @@
+{
+  "name": "Data Endpoint",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "getRows",
+        "workbook": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "worksheet": {
+          "__rl": true,
+          "value": "=Proveedor_Pagos_Registro",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "=Facturas_Tabla",
+          "mode": "id"
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.microsoftExcel",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -96
+      ],
+      "id": "2e1c9d7a-97bd-4756-b812-21970047c6e7",
+      "name": "Get rows",
+      "credentials": {
+        "microsoftExcelOAuth2Api": {
+          "id": "7QuUsFigL9rCPXgf",
+          "name": "Microsoft Excel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "api-portal",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -336,
+        0
+      ],
+      "id": "896f7b22-4cc3-45b2-84de-5ceab9593bbc",
+      "name": "Webhook",
+      "webhookId": "629ae836-5736-4119-8639-bd56d7063219"
+    },
+    {
+      "parameters": {
+        "content": "## Flujo de obtención de datos para el dashboard y la lista",
+        "height": 480,
+        "width": 1892
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -400,
+        -208
+      ],
+      "typeVersion": 1,
+      "id": "95786b1b-ed79-4ff2-a904-283078071da1",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "folderId": "51E133309557B1A6!s8c6ac57f34d14a0fa7c201d43095a002"
+      },
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        0
+      ],
+      "id": "36ac1f02-ea9c-413e-9bd7-ea9f35c57b63",
+      "name": "Buscar Archivo",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "g65XPs4CLYU3PAfb",
+          "name": "Microsoft Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3b605b06-897b-4fa0-94a3-8be4b86b0e8f",
+              "leftValue": "={{ $input.all().some(item => item.json.name === 'Registro_Facturas_' + $now.toFormat('yyyy-MM') + '.xlsx') }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        64,
+        464
+      ],
+      "id": "99a67bff-33b8-4cfc-a694-3b8f84902d73",
+      "name": "Existe?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "039f6cb6-4442-41b4-8868-89ea53f39a1f",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "=Registro_Facturas_{{ $now.toFormat('yyyy-MM') }}.xlsx",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        288,
+        352
+      ],
+      "id": "70cb94f2-db76-4eae-8794-24ef8f353f25",
+      "name": "Filtrar archivo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7574e70a-1848-4ce9-b504-24c371465cb4",
+              "leftValue": "={{ $('Webhook').item.json.query.numero }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        848,
+        -96
+      ],
+      "id": "dfab0e42-f9fc-4e6d-b15c-20d02ca7d6b6",
+      "name": "Es registro?"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n    // Extraemos la fila actual del Excel\n    const fila = item.json;\n\n    return {\n        id: fila[\"NUMERO\"] || \"Sin ID\",\n        client: fila[\"PROVEEDOR\"] || \"Desconocido\",\n        date: fila[\"FECHA FACTURA\"] || \"Sin fecha\",\n        amount: fila[\"TOTAL\"] || \"0\",\n        currency: fila[\"MONEDA\"]   || \"EUR\",\n        // Como no tienes una columna exacta de \"Estado\", usamos \"PROCESADO\" por defecto\n        // o validamos si tiene \"FECHA PROCESO\"\n        status: fila[\"FECHA PROCESO\"] ? \"PROCESADO\" : \"PENDIENTE\"\n    };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        16
+      ],
+      "id": "3972f80e-1970-4b94-b3fe-7da52747b401",
+      "name": "Extraer lista"
+    },
+    {
+      "parameters": {
+        "jsCode": "const numero = $('Webhook').item.json.query.numero;\nconst filas = $input.all();\n\nconst encontrada = filas.find(item => \n    String(item.json['NUMERO']).trim() === String(numero).trim()\n);\n\nif (encontrada) {\n    return [{\n        json: {\n            encontrado: true,\n            factura: {\n                id: encontrada.json['NUMERO'],\n                client: encontrada.json['PROVEEDOR'],\n                date: encontrada.json['FECHA FACTURA'],\n                amount: encontrada.json['TOTAL'],\n                status: encontrada.json['FECHA PROCESO'] ? 'PROCESADO' : 'PENDIENTE'\n            }\n        }\n    }];\n} else {\n    return [{ json: { encontrado: false } }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        -176
+      ],
+      "id": "edcda6fe-3d50-438d-9577-8f8646dd30a4",
+      "name": "Extraer registro"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lee el parámetro ?mes=yyyy-MM, si no viene usa el mes actual\nconst queryMes = $('Webhook').item.json.query?.mes || null;\n\nlet targetYM;\nif (queryMes && /^\\d{4}-\\d{2}$/.test(queryMes)) {\n  targetYM = queryMes;\n} else {\n  const now = new Date();\n  targetYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;\n}\n\nreturn [{ json: { targetYM, archivoObjetivo: `Registro_Facturas_${targetYM}.xlsx` } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        0
+      ],
+      "id": "e83e3f5d-edd6-4d34-8f95-6d728a9b4c3e",
+      "name": "Resolver Mes"
+    },
+    {
+      "parameters": {
+        "jsCode": "const archivoObjetivo = $('Resolver Mes').item.json.archivoObjetivo;\nconst archivos = $input.all();\nconst encontrado = archivos.find(item => item.json.name === archivoObjetivo);\n\nif (encontrado) {\n  return [{ json: { existe: true, id: encontrado.json.id } }];\n} else {\n  return [{ json: { existe: false, id: null } }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "53f7efea-c2d7-42f0-962f-0e2ff0b0c787",
+      "name": "Filtrar y Verificar"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "[]",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        640,
+        80
+      ],
+      "id": "6dc14516-ac21-41a8-a53b-ede7201aabbf",
+      "name": "Respuesta Vacia"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a291e1a2-6cda-4c7a-884f-a03dc564a5e9",
+              "leftValue": "={{ $json.existe }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        368,
+        0
+      ],
+      "id": "0516120a-9814-428e-8748-f1df160b108c",
+      "name": "¿Existe?"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1280,
+        -96
+      ],
+      "id": "4f4bc6b1-d454-4b70-a51a-fe93919c1db6",
+      "name": "Respuesta Completa"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Resolver Mes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get rows": {
+      "main": [
+        [
+          {
+            "node": "Es registro?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Archivo": {
+      "main": [
+        [
+          {
+            "node": "Filtrar y Verificar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existe?": {
+      "main": [
+        [
+          {
+            "node": "Filtrar archivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar archivo": {
+      "main": [
+        []
+      ]
+    },
+    "Es registro?": {
+      "main": [
+        [
+          {
+            "node": "Extraer registro",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extraer lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer registro": {
+      "main": [
+        [
+          {
+            "node": "Respuesta Completa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer lista": {
+      "main": [
+        [
+          {
+            "node": "Respuesta Completa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar y Verificar": {
+      "main": [
+        [
+          {
+            "node": "¿Existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolver Mes": {
+      "main": [
+        [
+          {
+            "node": "Buscar Archivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Existe?": {
+      "main": [
+        [
+          {
+            "node": "Get rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respuesta Vacia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "62dd8613-fd40-44a7-84a0-3ea23cd5f0fe",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fd7bb03de3de18538e054dd4028dfe2ce0a4a589855e64c11d68acde1df3e3b2"
+  },
+  "id": "g619hePovM69iFn3",
+  "tags": []
+}

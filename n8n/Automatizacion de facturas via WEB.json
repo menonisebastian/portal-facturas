@@ -1,0 +1,1098 @@
+{
+  "name": "Automatizacion de facturas via WEB",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7fc9a9c6-6d7b-4d67-8df1-bc57fb2f845a",
+              "name": "NUMERO",
+              "value": "={{ $json.numero_factura }}",
+              "type": "string"
+            },
+            {
+              "id": "e1688b6b-92cb-451b-bac5-266e46bc6111",
+              "name": "FECHA FACTURA",
+              "value": "={{ $json.fecha_factura }}",
+              "type": "string"
+            },
+            {
+              "id": "51723453-e263-4c8f-ac9a-b134ce542cfc",
+              "name": "PROVEEDOR",
+              "value": "={{ $json.proveedor }}",
+              "type": "string"
+            },
+            {
+              "id": "8b0d8557-22a9-4340-9f82-77886d0f5ea8",
+              "name": "CIF-PROVEEDOR",
+              "value": "={{ $json.cif_proveedor }}",
+              "type": "string"
+            },
+            {
+              "id": "6b5da605-36dd-445e-99c4-3d6fdd7c49ca",
+              "name": "DOMICILIO",
+              "value": "={{ $json.domicilio }}",
+              "type": "string"
+            },
+            {
+              "id": "e8d5c5d8-baa4-4c45-8acf-00ebbc5203b1",
+              "name": "DESCRIPCION",
+              "value": "={{ $json.descripcion }}",
+              "type": "string"
+            },
+            {
+              "id": "a390007e-2769-4b8a-b637-3f74260b907b",
+              "name": "BASE",
+              "value": "={{ $json.base_imponible }}",
+              "type": "string"
+            },
+            {
+              "id": "f8537a7c-0d6b-42a9-acd7-a93f910aa8ca",
+              "name": "CUOTAIVA",
+              "value": "={{ $json.cuota_iva }}",
+              "type": "string"
+            },
+            {
+              "id": "d7244e6c-e5ac-4b86-95e1-03b5ccc61a7d",
+              "name": "TOTAL",
+              "value": "={{ $json.total_factura }}",
+              "type": "string"
+            },
+            {
+              "id": "398dc8b0-43ab-4990-9373-2d7cc7369f91",
+              "name": "MONEDA",
+              "value": "={{ $json.moneda }}",
+              "type": "string"
+            },
+            {
+              "id": "fb7cea8d-77e7-490a-ba1b-fa2be957ee0b",
+              "name": "IRPF",
+              "value": "={{ $json.irpf }}",
+              "type": "string"
+            },
+            {
+              "id": "264dc364-686a-4da3-a3f6-cccbe7a03490",
+              "name": "PAGO",
+              "value": "={{ $json.metodo_pago }}",
+              "type": "string"
+            },
+            {
+              "id": "6840fea0-cd3b-4140-9545-58e07f6583ce",
+              "name": "FECHA VENCIMIENTO",
+              "value": "={{ $json.fecha_vencimiento }}",
+              "type": "string"
+            },
+            {
+              "id": "04673f85-c10b-40fd-b549-d1849df776e0",
+              "name": "FECHA PROCESO",
+              "value": "={{ $now.setZone('Europe/Madrid').toFormat('dd/MM/yyyy HH:mm') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2224,
+        112
+      ],
+      "id": "e8c21ea8-c1a1-4b2d-9ecb-792f93689a9e",
+      "name": "Asignar datos a cabeceras"
+    },
+    {
+      "parameters": {
+        "jsCode": "const newItems = [];\nconst items = $input.all(); // Obtenemos TODAS las respuestas de Gemini (los 3 ítems)\n\n// Recorremos cada respuesta una por una\nfor (let i = 0; i < items.length; i++) {\n  try {\n    // 1. Navegamos por la estructura exacta para ESTE ítem en concreto\n    let respuesta = items[i].json.content.parts[0].text;\n\n    // 2. Limpiamos el texto por si Gemini ha metido las comillas de Markdown\n    respuesta = respuesta.replace(/```json/g, \"\").replace(/```/g, \"\").trim();\n\n    // 3. Convertimos ese texto limpio en un objeto JSON real\n    const datos = JSON.parse(respuesta);\n\n    // 4. Lo añadimos a nuestra lista de nuevos ítems\n    newItems.push({ json: datos });\n    \n  } catch (error) {\n    /// Si falla la IA o está saturada, forzamos este mensaje\n    newItems.push({ \n      json: { \n        es_factura: false, \n        mensaje: \"El motor de IA está sobrecargado en este momento. Por favor, intenta de nuevo en unos minutos.\" \n      } \n    });\n  }\n}\n\n// Devolvemos los 3 ítems procesados\nreturn newItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1008,
+        144
+      ],
+      "id": "6c046565-4601-4b05-ae76-877942c2e22f",
+      "name": "Limpiar JSON de Gemini"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4308d6e3-1a0c-4008-8f15-f78bc48843d1",
+              "leftValue": "={{ $json.es_factura }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -784,
+        144
+      ],
+      "id": "9df0edfa-67f3-41cd-be33-dce8ab72744c",
+      "name": "Es factura?"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2000,
+        16
+      ],
+      "id": "711dc000-1273-4873-a339-98f4b77ef4b6",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "content": "## Recepción de archivos",
+        "height": 288,
+        "width": 448,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1744,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "a4775149-3720-42ab-bf4c-c7bff7dce84b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Inteligencia Artificial\n",
+        "height": 288,
+        "width": 656,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1280,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "1f27dea3-3d96-4d2e-b31e-f4330946a52f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Escritura y almacenamiento en OneDrive\n",
+        "height": 464,
+        "width": 2340,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        336,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "4777c20d-a424-4fa8-9597-c1dcae477629",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "folderId": "51E133309557B1A6!s8c6ac57f34d14a0fa7c201d43095a002"
+      },
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "typeVersion": 1.1,
+      "position": [
+        1072,
+        96
+      ],
+      "id": "43244013-952e-4eed-9e5c-44cd9cc16d9a",
+      "name": "Obtener Plantilla",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "g65XPs4CLYU3PAfb",
+          "name": "Microsoft Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "document",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Analiza el documento adjunto. Si NO es una factura o un recibo de pago válido, devuelve ÚNICAMENTE este JSON exacto: {\"es_factura\": false}. Si SÍ es una factura, extrae los datos y devuelve ÚNICAMENTE un JSON con esta estructura exacta: {\"es_factura\": true, \"numero_factura\": \"\", \"fecha_factura\": \"\", \"proveedor\": \"\", \"cif_proveedor\": \"\", \"domicilio\": \"\", \"descripcion\": \"\", \"base_imponible\": \"\", \"porcentaje_iva\": \"\", \"cuota_iva\": \"\", \"irpf\": \"\", \"total_factura\": \"\", \"moneda\": \"\", \"metodo_pago\": \"\", \"fecha_vencimiento\": \"\"}.\n\nREGLAS OBLIGATORIAS:\n\n1. NUMERO DE FACTURA: Busca ÚNICAMENTE el campo etiquetado explícitamente como \"Nº Factura\", \"Factura nº\", \"Invoice number\", \"Número de factura\" o similar. Copia el valor EXACTAMENTE como aparece, sin modificarlo ni combinarlo con nada. Si el número es \"98765\", devuelve \"98765\". NUNCA combines el número con el mes, año u otros datos del documento. Si no encuentras un campo de número de factura explícito, usa \"N/A\".\n\n2. FECHA: Usa siempre formato DD/MM/YYYY. Si es un periodo (ej: \"Del 1 al 31 de enero de 2017\"), usa el último día del periodo. Si no hay fecha, usa \"N/A\".\n\n3. FECHA VENCIMIENTO: Si no aparece explícitamente, usa la misma fecha que fecha_factura. Nunca dejes este campo vacío.\n\n4. MONEDA: Devuelve SIEMPRE el código ISO de 3 letras: \"EUR\", \"USD\", \"MXN\", \"GBP\", etc. Nunca uses símbolos como €, $, £.\n\n5. METODO DE PAGO: Devuelve ÚNICAMENTE una de estas opciones exactas: \"Contado\", \"Transferencia bancaria\", \"Cheque\", \"Domiciliación bancaria\", \"No especificado\". No uses ningún otro valor.\n\n6. CAMPOS NUMÉRICOS: Sin separadores de miles, usa punto para decimales (ej: \"1100\", \"215.46\"). Si no aparece el valor, usa \"0\".\n\n7. CAMPOS VACÍOS: Si un campo no aparece en el documento, usa \"N/A\" para texto y \"0\" para números. Nunca dejes un campo con valor vacío \"\".\n\n8. DESCRIPCION: Máximo 50 caracteres. Resume el concepto principal de la factura de forma breve.\n\n9. DOMICILIO: Extrae la dirección postal completa del emisor (proveedor) de la factura. Si no aparece, usa \"N/A\".\n\n10. IRPF: Extrae el importe total retenido en concepto de IRPF (la cuota). Si no existe retención de IRPF en la factura, usa \"0\".\n\n11. No añadas etiquetas markdown ni texto adicional fuera del JSON.",
+        "inputType": "binary",
+        "binaryPropertyName": "attachment_0",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -1232,
+        144
+      ],
+      "id": "ae46e107-9da0-4a32-beac-bb044fd35098",
+      "name": "Analyze document",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "T2v9sDYMlhSuTPLz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "folderId": "51E133309557B1A6!s8c6ac57f34d14a0fa7c201d43095a002"
+      },
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "typeVersion": 1.1,
+      "position": [
+        368,
+        32
+      ],
+      "id": "d37a2afa-3aec-4693-b970-516b647ddbb3",
+      "name": "Buscar Archivo",
+      "executeOnce": true,
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "g65XPs4CLYU3PAfb",
+          "name": "Microsoft Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "workbook": {
+          "__rl": true,
+          "value": "={{ $json.excel_id }}",
+          "mode": "id"
+        },
+        "worksheet": {
+          "__rl": true,
+          "value": "{00000000-0001-0000-0000-000000000000}",
+          "mode": "list",
+          "cachedResultName": "Proveedor_Pagos_Registro",
+          "cachedResultUrl": "https://onedrive.live.com/personal/51e133309557b1a6/_layouts/15/doc.aspx?resid=c109707c-54da-4d56-893a-7b5a0c15cc99&cid=51e133309557b1a6&activeCell=Proveedor_Pagos_Registro!A1"
+        },
+        "table": {
+          "__rl": true,
+          "value": "{ED66FBAD-195C-47DC-AD77-88AAB4B21207}",
+          "mode": "list",
+          "cachedResultName": "Facturas_Tabla",
+          "cachedResultUrl": "https://onedrive.live.com/personal/51e133309557b1a6/_layouts/15/doc.aspx?resid=c109707c-54da-4d56-893a-7b5a0c15cc99&cid=51e133309557b1a6&activeCell=Proveedor_Pagos_Registro!A1:L2"
+        },
+        "dataMode": "autoMap",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftExcel",
+      "typeVersion": 2.2,
+      "position": [
+        2448,
+        112
+      ],
+      "id": "f6a15e8d-6e82-4e40-8f8e-7ebb493c4a84",
+      "name": "Agregar fila/datos",
+      "credentials": {
+        "microsoftExcelOAuth2Api": {
+          "id": "7QuUsFigL9rCPXgf",
+          "name": "Microsoft Excel account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": "={{ $json.id }}",
+        "additionalFields": {
+          "name": "=Registro_Facturas_{{ $now.toFormat('yyyy-MM') }}.xlsx"
+        },
+        "parentReference": {
+          "path": "/drive/root:/Facturas"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        96
+      ],
+      "id": "e04a7578-03dd-4679-b3da-73e687d8ac0a",
+      "name": "Creación desde plantilla",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "g65XPs4CLYU3PAfb",
+          "name": "Microsoft Drive account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst newItems = [];\n\nfor (const item of items) {\n  if (item.binary) {\n    for (const key of Object.keys(item.binary)) {\n      newItems.push({\n        json: { binary_key: key },\n        binary: {\n          attachment_0: item.binary[key]\n        }\n      });\n    }\n  }\n}\n\nreturn newItems;\n\n// Esto convierte cada attachment en un item independiente, siempre con el nombre `attachment_0`, y así el **Analyze Document** siempre encuentra ese campo y procesa uno por llamada."
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1456,
+        144
+      ],
+      "id": "3abfb627-672d-47f3-9038-c44ca4927915",
+      "name": "Conversión de items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3b605b06-897b-4fa0-94a3-8be4b86b0e8f",
+              "leftValue": "={{ $json.id?.toBoolean() }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "boolean",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        32
+      ],
+      "id": "dcb20eba-b59f-44ad-96ce-4d0a7986fc59",
+      "name": "Existe?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "039f6cb6-4442-41b4-8868-89ea53f39a1f",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "=Registro_Facturas_{{ $now.toFormat('yyyy-MM') }}.xlsx",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        544,
+        32
+      ],
+      "id": "e1a9d13a-3295-490f-abb3-0817275fb04b",
+      "name": "Filtrar archivo",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4ac7526c-a776-4494-8e2d-cae044da5090",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "=facturas_plantilla.xlsx",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        1232,
+        96
+      ],
+      "id": "cebda2af-a551-4dd0-a74a-18b433fe28ed",
+      "name": "Filtrar plantilla"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "subir-factura",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "binaryPropertyName": "=attachment_0"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1680,
+        144
+      ],
+      "id": "5bd4f23e-7813-4e01-a69e-75867253832d",
+      "name": "Webhook",
+      "webhookId": "18701bcc-2fb0-4ba5-909d-d60208152a65"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "facturas",
+          "mode": "list",
+          "cachedResultName": "facturas"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        -32
+      ],
+      "id": "8f159013-ea44-4967-83bb-fd220dea8b18",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "8HasHPbSC3DOxalO",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        160
+      ],
+      "id": "4b2e3bc3-40b0-4eef-9b5f-f56327b4dfa5",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "T2v9sDYMlhSuTPLz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        160,
+        160
+      ],
+      "id": "70f5a6c0-0414-4d7d-ba14-35a449126cb1",
+      "name": "Default Data Loader",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "content": "## Almacenamiento en Qdrant",
+        "height": 528,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -144
+      ],
+      "id": "b8e78556-8e8c-4ca6-8186-ddc8399e16c5",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d419db31-fc51-466e-9550-3ea77697441e",
+              "name": "exito",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "9ab6594f-d4e6-4101-84d9-8f9aa2df3f55",
+              "name": "mensaje",
+              "value": "=Factura de {{ $('Limpiar JSON de Gemini').item.json.proveedor }} procesada con éxito.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2224,
+        -96
+      ],
+      "id": "b930503b-fb56-4d26-b92d-392490ea1e3a",
+      "name": "Formateo mensaje éxito"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d419db31-fc51-466e-9550-3ea77697441e",
+              "name": "exito",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "9ab6594f-d4e6-4101-84d9-8f9aa2df3f55",
+              "name": "mensaje",
+              "value": "={{ $json.encontrado === true \n  ? 'La factura Nº ' + $json.factura.id + ' ya existe en el registro.' \n  : ($json.mensaje || 'El documento no parece ser una factura válida o faltan datos clave.') \n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -512,
+        272
+      ],
+      "id": "77d148e2-8432-4598-afa9-fd6f7e5736ff",
+      "name": "Formateo mensaje error"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2448,
+        -96
+      ],
+      "id": "002008b9-1bff-4db7-bd3f-5b69d2829117",
+      "name": "Respuesta éxitosa"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -304,
+        272
+      ],
+      "id": "e191231e-c370-4f60-ac73-8ca5c9b5b940",
+      "name": "Respuesta de error"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e67645b8-7550-4c24-b716-782f9c937fc0",
+              "leftValue": "={{ $json.encontrado }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -320,
+        0
+      ],
+      "id": "9513abba-4072-4bf3-bfed-98c7d4f7c19a",
+      "name": "Existe registro"
+    },
+    {
+      "parameters": {
+        "content": "## Verificar si ya existe la factura en el documento \n",
+        "height": 528,
+        "width": 512,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -608,
+        -96
+      ],
+      "typeVersion": 1,
+      "id": "c4f22594-4883-46b5-a0f7-f894013c39fe",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "url": "https://n8n-automatizacion.178.105.8.162.sslip.io/webhook/api-portal",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "numero",
+              "value": "={{ $json.numero_factura }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -512,
+        0
+      ],
+      "id": "b73177c6-f824-476e-989a-c979637cb5da",
+      "name": "Ejecutar Data Endpoint"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Buscar el archivo directamente desde los nodos de OneDrive disponibles\nlet id_del_excel = null;\nconst nombreArchivo = `Registro_Facturas_${$now.toFormat('yyyy-MM')}.xlsx`;\n\n// Intentar desde \"Buscar Archivo\" (nodo OneDrive que lista la carpeta)\ntry {\n  const archivos = $('Buscar Archivo').all();\n  for (const archivo of archivos) {\n    if (archivo.json.name === nombreArchivo) {\n      id_del_excel = archivo.json.id;\n      break;\n    }\n  }\n} catch(e) {\n  console.log('Error leyendo Buscar Archivo:', e.message);\n}\n\n// Si no, intentar desde \"Filtrar archivo\"\nif (!id_del_excel) {\n  try {\n    const filtro = $('Filtrar archivo').all();\n    for (const f of filtro) {\n      if (f.json.id) {\n        id_del_excel = f.json.id;\n        break;\n      }\n    }\n  } catch(e) {}\n}\n\n// Si no, intentar desde \"Creación desde plantilla\" (cuando SÍ creó bien)\nif (!id_del_excel) {\n  try {\n    const creacion = $('Creación desde plantilla').all();\n    for (const c of creacion) {\n      if (c.json.id && !c.json.error) {\n        id_del_excel = c.json.id;\n        break;\n      }\n    }\n  } catch(e) {}\n}\n\nconsole.log('Nombre buscado:', nombreArchivo);\nconsole.log('ID encontrado:', id_del_excel);\n\nif (!id_del_excel) {\n  // Mostrar qué hay disponible para debug\n  try {\n    const ba = $('Buscar Archivo').all();\n    console.log('Archivos en Buscar Archivo:', JSON.stringify(ba.map(x => ({name: x.json.name, id: x.json.id}))));\n  } catch(e) {}\n  throw new Error(`No se encontró el archivo \"${nombreArchivo}\" en OneDrive.`);\n}\n\nconst facturas = $('Limpiar JSON de Gemini').all();\nreturn facturas.map(f => ({\n  json: { ...JSON.parse(JSON.stringify(f.json)), excel_id: id_del_excel }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        16
+      ],
+      "id": "86e42526-eb40-4e5b-a42e-f2121d566d3e",
+      "name": "Recuperar Facturas"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "90893f2b-6243-432c-9ca8-d008da333863",
+              "name": "excel_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        32
+      ],
+      "id": "36ec8528-aeea-44f5-9364-05134d42b986",
+      "name": "Guardar ID Existente"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1fc95dff-55d9-4462-91ba-680fbcef0ec5",
+              "name": "excel_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        96
+      ],
+      "id": "d0879046-54f4-4de4-87fb-c5dc814a6904",
+      "name": "Guardar ID Nuevo"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Asignar datos a cabeceras": {
+      "main": [
+        [
+          {
+            "node": "Agregar fila/datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar JSON de Gemini": {
+      "main": [
+        [
+          {
+            "node": "Es factura?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es factura?": {
+      "main": [
+        [
+          {
+            "node": "Ejecutar Data Endpoint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Formateo mensaje error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Formateo mensaje éxito",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Asignar datos a cabeceras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Plantilla": {
+      "main": [
+        [
+          {
+            "node": "Filtrar plantilla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze document": {
+      "main": [
+        [
+          {
+            "node": "Limpiar JSON de Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Archivo": {
+      "main": [
+        [
+          {
+            "node": "Filtrar archivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agregar fila/datos": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Creación desde plantilla": {
+      "main": [
+        [
+          {
+            "node": "Guardar ID Nuevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversión de items": {
+      "main": [
+        [
+          {
+            "node": "Analyze document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existe?": {
+      "main": [
+        [
+          {
+            "node": "Recuperar Facturas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obtener Plantilla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar archivo": {
+      "main": [
+        [
+          {
+            "node": "Guardar ID Existente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar plantilla": {
+      "main": [
+        [
+          {
+            "node": "Creación desde plantilla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Conversión de items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Buscar Archivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formateo mensaje éxito": {
+      "main": [
+        [
+          {
+            "node": "Respuesta éxitosa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formateo mensaje error": {
+      "main": [
+        [
+          {
+            "node": "Respuesta de error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existe registro": {
+      "main": [
+        [
+          {
+            "node": "Formateo mensaje error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar Data Endpoint": {
+      "main": [
+        [
+          {
+            "node": "Existe registro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recuperar Facturas": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar ID Existente": {
+      "main": [
+        [
+          {
+            "node": "Existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar ID Nuevo": {
+      "main": [
+        [
+          {
+            "node": "Recuperar Facturas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Europe/Madrid",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "31527f13-3e65-4936-8590-c46971c7b1ec",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fd7bb03de3de18538e054dd4028dfe2ce0a4a589855e64c11d68acde1df3e3b2"
+  },
+  "id": "0TzJ2r1AcWTCZe3z",
+  "tags": []
+}
