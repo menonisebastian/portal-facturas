@@ -35,7 +35,7 @@ async function ensureChatWindowOpen() {
     if (!isOpen) chatToggle.click();
 }
 
-export async function initChat(selectedTheme = 'light', isHistory = false) {
+export async function initChat(selectedTheme = 'light', isHistory = false, historyMessages = null) {
     const chatFn = await loadChatSDK();
     if (!chatFn) {
         console.warn('Chat SDK no disponible. Saltando inicialización del chat.');
@@ -56,15 +56,31 @@ export async function initChat(selectedTheme = 'light', isHistory = false) {
     }
 
     // 3. Crear el chat
+    const fallbackHistoryMessages = Array.isArray(historyMessages)
+        ? historyMessages
+            .slice(-20)
+            .map(msg => {
+                const content = (msg.content || '').trim();
+                if (!content) return null;
+                const type = msg.type === 'human' ? 'Tu' : 'Asistente';
+                return `${type}: ${content}`;
+            })
+            .filter(Boolean)
+        : [];
+
+    const initialMessages = isHistory
+        ? fallbackHistoryMessages
+        : [
+            '¡Hola! 👋 Soy tu asistente financiero.',
+            '¿En qué puedo ayudarte hoy?'
+        ];
+
     chatFn({
         webhookUrl: N8N_CHAT_WEBHOOK_URL,
         theme: selectedTheme,
         sessionId: sessionId,
         showWelcomeScreen: false,
-        initialMessages: isHistory ? [] :[
-            '¡Hola! 👋 Soy tu asistente financiero.',
-            '¿En qué puedo ayudarte hoy?'
-        ],
+        initialMessages,
         i18n: {
             en: { title: 'Asistente de Facturas', subtitle: 'Consulta inteligente de tus documentos', inputPlaceholder: 'Escribe tu duda...', getStarted: 'Comenzar' },
             es: { title: 'Asistente de Facturas', subtitle: 'Consulta inteligente de tus documentos', inputPlaceholder: 'Escribe tu duda...', getStarted: 'Comenzar' }
@@ -239,7 +255,18 @@ export async function loadChatHistory() {
 export async function openSession(sessionId) {
     localStorage.setItem('n8n_chat_sessionId', sessionId);
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-    await initChat(theme, true);
+    let historyMessages = [];
+    try {
+        const url = `${HISTORIAL_API_URL}?session_id=${encodeURIComponent(sessionId)}`;
+        const res = await apiFetch(url);
+        if (res.ok) {
+            historyMessages = await res.json();
+        }
+    } catch (error) {
+        console.warn('No se pudo cargar el historial de la sesión seleccionada:', error);
+    }
+
+    await initChat(theme, true, historyMessages);
     await ensureChatWindowOpen();
 }
 
