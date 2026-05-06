@@ -88,7 +88,6 @@ export async function initChat(selectedTheme = 'light', isHistory = false) {
         },
         chatSessionKey: 'sessionId',
         loadPreviousSession: true,
-        theme: selectedTheme,
         sessionId: sessionId,
         showWelcomeScreen: false,
         initialMessages,

@@ -218,7 +218,10 @@ export function initUpload() {
 
                     fileInput.value = ''; 
                     fileInfoContainer.classList.add('hidden');
-                    Cache.invalidate();
+                    
+                    const now = new Date();
+                    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                    Cache.invalidate(currentMonth);
 
                     // Log notification + emit event
                     addNotification('success', file.name, result.mensaje || 'Factura procesada correctamente.');

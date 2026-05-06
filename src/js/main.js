@@ -34,6 +34,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Solo precargar tasas. Las facturas se cargan bajo demanda
             // al abrir cada sección para evitar fallos de arranque.
             fetchFXRates();
+
+            // Precargar el mes actual en segundo plano sin bloquear nada
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            Cache.fetch(currentMonth).catch(() => {
+            // Silencioso — si falla, se reintentará al abrir la sección
+            });
+
         }, 300);
 
         // 5. Listener para el botón de abrir chat global
